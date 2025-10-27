@@ -83,6 +83,28 @@ const mockMarkets = [
   },
 ];
 
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1
+    }
+  }
+};
+
+const cardVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.5,
+      ease: "easeOut"
+    }
+  }
+};
+
 export default function Markets() {
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedMarket, setSelectedMarket] = useState<typeof mockMarkets[0] | null>(null);
@@ -105,7 +127,12 @@ export default function Markets() {
       
       <div className="py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6 mb-8">
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="flex flex-col md:flex-row md:items-center md:justify-between gap-6 mb-8"
+          >
             <div>
               <h1 className="text-3xl font-bold mb-2" data-testid="heading-active-markets">Active Markets</h1>
               <p className="text-muted-foreground" data-testid="text-market-count">
@@ -113,20 +140,29 @@ export default function Markets() {
               </p>
             </div>
             <CategoryFilter onCategoryChange={setSelectedCategory} />
-          </div>
+          </motion.div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredMarkets.map((market) => (
-              <div 
-                key={market.id} 
+          <motion.div 
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+          >
+            {filteredMarkets.map((market, index) => (
+              <motion.div 
+                key={market.id}
+                variants={cardVariants}
+                custom={index}
+                whileHover={{ scale: 1.02, y: -5 }}
+                transition={{ duration: 0.2 }}
                 onClick={() => setSelectedMarket(market)} 
                 className="cursor-pointer"
                 data-testid={`market-card-${market.id}`}
               >
                 <PredictionCard {...market} />
-              </div>
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
           
           {selectedMarket && (
             <MarketDetailsModal
