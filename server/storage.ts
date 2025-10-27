@@ -32,6 +32,8 @@ export interface IStorage {
   getBetsByMarket(marketId: string): Promise<Bet[]>;
   getBetsByUser(userAddress: string): Promise<Bet[]>;
   getBetByTransactionHash(transactionHash: string): Promise<Bet | undefined>;
+  getBetByTaxTransactionHash(taxTransactionHash: string): Promise<Bet | undefined>;
+  getRefundEligibleBets(): Promise<Bet[]>;
   createBet(bet: InsertBet): Promise<Bet>;
   updateBet(id: string, bet: Partial<Bet>): Promise<Bet | undefined>;
   
@@ -158,6 +160,18 @@ export class MemStorage implements IStorage {
     );
   }
 
+  async getBetByTaxTransactionHash(taxTransactionHash: string): Promise<Bet | undefined> {
+    return Array.from(this.bets.values()).find(
+      (bet) => bet.taxTransactionHash === taxTransactionHash
+    );
+  }
+
+  async getRefundEligibleBets(): Promise<Bet[]> {
+    return Array.from(this.bets.values()).filter(
+      (bet) => bet.refundEligible && !bet.refundProcessed
+    );
+  }
+
   async createBet(insertBet: InsertBet): Promise<Bet> {
     const id = randomUUID();
     const bet: Bet = { 
@@ -167,10 +181,14 @@ export class MemStorage implements IStorage {
       prediction: insertBet.prediction,
       amount: insertBet.amount,
       transactionHash: insertBet.transactionHash,
+      taxTransactionHash: insertBet.taxTransactionHash ?? null,
+      taxStatus: insertBet.taxStatus ?? "pending",
       chainId: insertBet.chainId,
       timestamp: new Date(),
       claimed: insertBet.claimed ?? false,
       claimTransactionHash: insertBet.claimTransactionHash ?? null,
+      refundEligible: insertBet.refundEligible ?? false,
+      refundProcessed: insertBet.refundProcessed ?? false,
     };
     this.bets.set(id, bet);
     return bet;

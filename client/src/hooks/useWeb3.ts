@@ -8,7 +8,7 @@ import { apiRequest, queryClient } from '@/lib/queryClient'
  */
 export async function persistTransaction(params: {
   userAddress: string
-  type: 'bet' | 'claim' | 'create_market' | 'resolve_market'
+  type: 'bet' | 'claim' | 'create_market' | 'resolve_market' | 'escrow_tax'
   transactionHash: string
   status: 'pending' | 'success' | 'failed'
   chainId: number

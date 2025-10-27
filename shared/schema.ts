@@ -45,15 +45,21 @@ export const bets = pgTable("bets", {
   prediction: text("prediction").notNull(),
   amount: text("amount").notNull(),
   transactionHash: text("transaction_hash").notNull(),
+  taxTransactionHash: text("tax_transaction_hash"),
+  taxStatus: text("tax_status").notNull().default("pending"),
   chainId: integer("chain_id").notNull(),
   timestamp: timestamp("timestamp").notNull().default(sql`now()`),
   claimed: boolean("claimed").notNull().default(false),
   claimTransactionHash: text("claim_transaction_hash"),
+  refundEligible: boolean("refund_eligible").notNull().default(false),
+  refundProcessed: boolean("refund_processed").notNull().default(false),
 }, (table) => ({
   userAddressIdx: index("bets_user_address_idx").on(table.userAddress),
   marketIdIdx: index("bets_market_id_idx").on(table.marketId),
   transactionHashIdx: index("bets_transaction_hash_idx").on(table.transactionHash),
+  taxTransactionHashIdx: index("bets_tax_transaction_hash_idx").on(table.taxTransactionHash),
   chainIdIdx: index("bets_chain_id_idx").on(table.chainId),
+  refundEligibleIdx: index("bets_refund_eligible_idx").on(table.refundEligible),
 }));
 
 export const transactions = pgTable("transactions", {
@@ -87,6 +93,8 @@ export const insertPredictionMarketSchema = createInsertSchema(predictionMarkets
 export const insertBetSchema = createInsertSchema(bets).omit({
   id: true,
   timestamp: true,
+  refundEligible: true,
+  refundProcessed: true,
 }).extend({
   userAddress: z.string()
     .regex(/^0x[a-fA-F0-9]{40}$/, "Invalid wallet address format"),
@@ -101,6 +109,12 @@ export const insertBetSchema = createInsertSchema(bets).omit({
     }, "Amount must be greater than zero"),
   transactionHash: z.string()
     .regex(/^0x[a-fA-F0-9]{64}$/, "Invalid transaction hash format"),
+  taxTransactionHash: z.string()
+    .regex(/^0x[a-fA-F0-9]{64}$/, "Invalid tax transaction hash format")
+    .optional(),
+  taxStatus: z.enum(["pending", "confirmed", "failed"], {
+    errorMap: () => ({ message: "Tax status must be 'pending', 'confirmed', or 'failed'" })
+  }).default("pending"),
   chainId: z.number()
     .int()
     .positive()

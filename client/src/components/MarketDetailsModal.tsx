@@ -10,14 +10,20 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Clock, Users, TrendingUp, Info, AlertCircle, Loader2, ExternalLink } from "lucide-react";
+import { Clock, Users, TrendingUp, Info, AlertCircle, Loader2, ExternalLink, CheckCircle2, HelpCircle } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { formatDistanceToNow } from "date-fns";
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { usePlaceBet, useClaimWinnings } from "@/hooks/usePredictionMarket";
 import { useWeb3 } from "@/hooks/useWeb3";
-import { validateBetAmount, formatBNB, toBNBWei } from "@/utils/blockchain";
-import { getExplorerUrl, BET_CONFIG, isContractDeployed } from "@/lib/contractConfig";
+import { validateBetAmount, formatBNB, toBNBWei, formatBetSplit } from "@/utils/blockchain";
+import { getExplorerUrl, BET_CONFIG, isContractDeployed, ESCROW_WALLET_ADDRESS, TAX_CONFIG, getAddressExplorerUrl } from "@/lib/contractConfig";
 import { useChainId } from "wagmi";
 import { ConfigurationAlert } from "./ConfigurationAlert";
 
@@ -52,7 +58,10 @@ export function MarketDetailsModal({ open, onOpenChange, market }: MarketDetails
     isLoading: isPlacingBet, 
     isSuccess: betSuccess,
     txHash: betTxHash,
-    gasEstimate 
+    escrowTxHash,
+    gasEstimate,
+    betSplit,
+    currentStep
   } = usePlaceBet();
   
   const {
@@ -67,10 +76,26 @@ export function MarketDetailsModal({ open, onOpenChange, market }: MarketDetails
   const calculatePotentialReturn = () => {
     if (!betAmount || isNaN(parseFloat(betAmount))) return "0.00";
     const amount = parseFloat(betAmount);
+    // Potential return is calculated based on the pool amount (99%) that actually goes to the bet
+    const poolAmount = amount * TAX_CONFIG.BET_POOL_DECIMAL;
     const odds = selectedOption === "yes" ? market.yesOdds : market.noOdds;
     const multiplier = 100 / odds;
-    return (amount * multiplier).toFixed(3);
+    return (poolAmount * multiplier).toFixed(3);
   };
+
+  const getBetBreakdown = () => {
+    if (!betAmount || isNaN(parseFloat(betAmount))) {
+      return { total: "0", pool: "0", tax: "0" };
+    }
+    try {
+      const totalWei = toBNBWei(betAmount);
+      return formatBetSplit(totalWei);
+    } catch {
+      return { total: "0", pool: "0", tax: "0" };
+    }
+  };
+
+  const breakdown = getBetBreakdown();
 
   const handlePlaceBet = async () => {
     if (!isConnected) {
@@ -144,9 +169,13 @@ export function MarketDetailsModal({ open, onOpenChange, market }: MarketDetails
   const getButtonText = () => {
     if (!isConnected) return "Connect Wallet to Bet";
     if (!contractDeployed) return "Contract Not Deployed";
-    if (isPlacingBet) return "Confirming Transaction...";
     if (market.status !== "live") return "Market Not Active";
-    return "Place Bet on Blockchain";
+    
+    if (currentStep === 'tax') return "Step 1/2: Confirming Tax Payment...";
+    if (currentStep === 'bet') return "Step 2/2: Confirming Bet Placement...";
+    if (currentStep === 'complete') return "Bet Placed Successfully!";
+    
+    return "Start Bet (2 Transactions Required)";
   };
 
   const isButtonDisabled = () => {
@@ -193,6 +222,80 @@ export function MarketDetailsModal({ open, onOpenChange, market }: MarketDetails
 
           <TabsContent value="bet" className="space-y-4 mt-4">
             <ConfigurationAlert variant="compact" showTitle={false} />
+            
+            {/* Two-Step Transaction Indicator */}
+            {(currentStep !== 'idle' || betAmount) && (
+              <div className="bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-blue-500/20 p-4 rounded-lg space-y-3">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="text-xs font-semibold text-blue-600 dark:text-blue-400 flex items-center gap-2">
+                    TWO TRANSACTIONS REQUIRED
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <HelpCircle className="w-3 h-3" />
+                        </TooltipTrigger>
+                        <TooltipContent className="max-w-xs">
+                          <p className="text-xs">
+                            To ensure all bets pay the {TAX_CONFIG.TAX_RATE_PERCENT}% platform tax, 
+                            we collect the tax FIRST, then place your bet. This prevents users from 
+                            bypassing the tax by rejecting the second transaction. If your bet fails 
+                            after paying the tax, you'll be eligible for a refund.
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  {/* Step 1: Pay Tax */}
+                  <div className={`flex items-center gap-3 p-2 rounded ${
+                    currentStep === 'tax' ? 'bg-blue-500/20' : 
+                    (currentStep === 'bet' || currentStep === 'complete') ? 'bg-green-500/10' : 
+                    'bg-muted/30'
+                  }`}>
+                    <div className="flex-shrink-0">
+                      {currentStep === 'tax' ? (
+                        <Loader2 className="w-4 h-4 animate-spin text-blue-500" />
+                      ) : (currentStep === 'bet' || currentStep === 'complete') ? (
+                        <CheckCircle2 className="w-4 h-4 text-green-500" />
+                      ) : (
+                        <div className="w-4 h-4 rounded-full border-2 border-muted-foreground" />
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <div className="text-xs font-semibold">Step 1/2: Pay Platform Tax</div>
+                      <div className="text-xs text-muted-foreground">
+                        Send {betSplit?.tax || '0.00'} BNB ({TAX_CONFIG.TAX_RATE_PERCENT}%) to escrow wallet
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Step 2: Place Bet */}
+                  <div className={`flex items-center gap-3 p-2 rounded ${
+                    currentStep === 'bet' ? 'bg-blue-500/20' : 
+                    currentStep === 'complete' ? 'bg-green-500/10' : 
+                    'bg-muted/30'
+                  }`}>
+                    <div className="flex-shrink-0">
+                      {currentStep === 'bet' ? (
+                        <Loader2 className="w-4 h-4 animate-spin text-blue-500" />
+                      ) : currentStep === 'complete' ? (
+                        <CheckCircle2 className="w-4 h-4 text-green-500" />
+                      ) : (
+                        <div className="w-4 h-4 rounded-full border-2 border-muted-foreground" />
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <div className="text-xs font-semibold">Step 2/2: Place Your Bet</div>
+                      <div className="text-xs text-muted-foreground">
+                        Send {betSplit?.pool || '0.00'} BNB ({TAX_CONFIG.BET_POOL_PERCENT}%) to betting pool
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
             
             <div className="grid grid-cols-2 gap-3">
               <button
@@ -273,8 +376,52 @@ export function MarketDetailsModal({ open, onOpenChange, market }: MarketDetails
                   {selectedOption === "yes" ? market.yesOdds : market.noOdds}%
                 </span>
               </div>
+            </div>
+
+            {betAmount && parseFloat(betAmount) > 0 && (
+              <div className="bg-blue-500/5 border border-blue-500/20 p-4 rounded-lg space-y-2">
+                <div className="text-xs font-semibold text-blue-600 dark:text-blue-400 mb-2">
+                  BET BREAKDOWN
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Total Bet Amount</span>
+                  <span className="font-mono font-semibold" data-testid="text-total-bet">
+                    {breakdown.total} BNB
+                  </span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">To Market Pool ({TAX_CONFIG.BET_POOL_PERCENT}%)</span>
+                  <span className="font-mono text-green-600 dark:text-green-400" data-testid="text-pool-amount">
+                    {breakdown.pool} BNB
+                  </span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Platform Tax ({TAX_CONFIG.TAX_RATE_PERCENT}%)</span>
+                  <span className="font-mono text-blue-600 dark:text-blue-400" data-testid="text-tax-amount">
+                    {breakdown.tax} BNB
+                  </span>
+                </div>
+                <div className="pt-2 border-t border-border">
+                  <div className="flex justify-between text-xs">
+                    <span className="text-muted-foreground">Escrow Wallet</span>
+                    <a
+                      href={getAddressExplorerUrl(chainId, ESCROW_WALLET_ADDRESS)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-mono text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
+                      data-testid="link-escrow-wallet"
+                    >
+                      {ESCROW_WALLET_ADDRESS.slice(0, 6)}...{ESCROW_WALLET_ADDRESS.slice(-4)}
+                      <ExternalLink className="w-3 h-3" />
+                    </a>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div className="bg-muted/50 p-3 rounded-lg">
               <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Est. Gas Fee</span>
+                <span className="text-muted-foreground">Est. Gas Fee (2 transactions)</span>
                 <span className="font-mono text-xs">
                   ~{gasEstimate} BNB
                 </span>
@@ -296,15 +443,36 @@ export function MarketDetailsModal({ open, onOpenChange, market }: MarketDetails
                 <Info className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
                 <div className="flex-1">
                   <p className="text-xs text-muted-foreground mb-1">
-                    Transaction submitted successfully!
+                    Bet transaction submitted successfully!
                   </p>
                   <a 
                     href={getExplorerUrl(chainId, betTxHash)}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-xs text-green-500 hover:underline flex items-center gap-1"
+                    data-testid="link-bet-tx"
                   >
-                    View on BSCScan <ExternalLink className="w-3 h-3" />
+                    View Bet Tx on BSCScan <ExternalLink className="w-3 h-3" />
+                  </a>
+                </div>
+              </div>
+            )}
+
+            {escrowTxHash && (
+              <div className="flex items-start gap-2 p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+                <Info className="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" />
+                <div className="flex-1">
+                  <p className="text-xs text-muted-foreground mb-1">
+                    Escrow tax transaction submitted successfully!
+                  </p>
+                  <a 
+                    href={getExplorerUrl(chainId, escrowTxHash)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs text-blue-500 hover:underline flex items-center gap-1"
+                    data-testid="link-escrow-tx"
+                  >
+                    View Escrow Tx on BSCScan <ExternalLink className="w-3 h-3" />
                   </a>
                 </div>
               </div>

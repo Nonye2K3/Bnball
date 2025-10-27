@@ -1,5 +1,5 @@
 import { parseEther, formatEther } from 'viem'
-import { BET_CONFIG } from '@/lib/contractConfig'
+import { BET_CONFIG, TAX_CONFIG } from '@/lib/contractConfig'
 
 /**
  * Validates that a bet amount meets the minimum requirement
@@ -217,6 +217,98 @@ export function checkSufficientBalance(
   }
   
   return { hasBalance: true }
+}
+
+/**
+ * Calculates the 1% tax amount from a bet
+ * @param betAmountWei - Total bet amount in Wei
+ * @returns Tax amount in Wei (1% of bet)
+ */
+export function calculateBetTax(betAmountWei: bigint): bigint {
+  // Calculate 1% using BigInt arithmetic to avoid precision loss
+  // Tax = betAmount * 1 / 100
+  return (betAmountWei * BigInt(TAX_CONFIG.TAX_RATE_PERCENT)) / BigInt(100)
+}
+
+/**
+ * Splits a bet amount into pool and tax portions
+ * @param betAmountWei - Total bet amount in Wei
+ * @returns Object with poolAmount (99%) and taxAmount (1%) in Wei
+ */
+export function calculateBetSplit(betAmountWei: bigint): {
+  poolAmount: bigint
+  taxAmount: bigint
+  totalAmount: bigint
+} {
+  const taxAmount = calculateBetTax(betAmountWei)
+  const poolAmount = betAmountWei - taxAmount
+  
+  return {
+    poolAmount,
+    taxAmount,
+    totalAmount: betAmountWei
+  }
+}
+
+/**
+ * Formats bet split for display
+ * @param betAmountWei - Total bet amount in Wei
+ * @param decimals - Number of decimal places (default: 4)
+ * @returns Object with formatted amounts
+ */
+export function formatBetSplit(betAmountWei: bigint, decimals: number = 4): {
+  total: string
+  pool: string
+  tax: string
+  poolBNB: string
+  taxBNB: string
+} {
+  const { poolAmount, taxAmount, totalAmount } = calculateBetSplit(betAmountWei)
+  
+  return {
+    total: formatBNB(totalAmount, decimals),
+    pool: formatBNB(poolAmount, decimals),
+    tax: formatBNB(taxAmount, decimals),
+    poolBNB: formatBNBWithSymbol(poolAmount, decimals),
+    taxBNB: formatBNBWithSymbol(taxAmount, decimals),
+  }
+}
+
+/**
+ * Calculates total cost including bet, tax, and gas for both transactions
+ * @param betAmountWei - Total bet amount in Wei
+ * @param betGasLimit - Gas limit for bet transaction
+ * @param transferGasLimit - Gas limit for tax transfer (default: 21000)
+ * @param gasPrice - Current gas price in Wei (optional)
+ * @returns Total cost breakdown in Wei
+ */
+export function calculateTotalBetCost(
+  betAmountWei: bigint,
+  betGasLimit: bigint,
+  transferGasLimit: bigint = BigInt(21000),
+  gasPrice?: bigint
+): {
+  betAmount: bigint
+  taxAmount: bigint
+  betGasCost: bigint
+  taxGasCost: bigint
+  totalCost: bigint
+  totalGas: bigint
+} {
+  const { poolAmount, taxAmount } = calculateBetSplit(betAmountWei)
+  
+  const betGasCost = estimateGasCost(betGasLimit, gasPrice).gasCostWei
+  const taxGasCost = estimateGasCost(transferGasLimit, gasPrice).gasCostWei
+  const totalGas = betGasCost + taxGasCost
+  
+  return {
+    betAmount: poolAmount,
+    taxAmount,
+    betGasCost,
+    taxGasCost,
+    totalCost: betAmountWei + totalGas,
+    totalGas,
+  }
 }
 
 /**

@@ -47,6 +47,22 @@ export function getContractAddress(chainId: number): `0x${string}` {
 // Contract ABI
 export const PREDICTION_MARKET_ABI = PredictionMarketABI.abi
 
+// Escrow wallet configuration
+// This wallet receives 1% tax on all bets placed on the platform
+export const ESCROW_WALLET_ADDRESS = '0xC196dc762FbC2AB044AAEAc05E27CD10c4982a01' as `0x${string}`
+
+// Tax configuration
+export const TAX_CONFIG = {
+  // Tax rate as a percentage (1%)
+  TAX_RATE_PERCENT: 1,
+  // Tax rate as a decimal for calculations (0.01)
+  TAX_RATE_DECIMAL: 0.01,
+  // Percentage that goes to the bet pool after tax (99%)
+  BET_POOL_PERCENT: 99,
+  // Percentage that goes to the bet pool as decimal (0.99)
+  BET_POOL_DECIMAL: 0.99,
+} as const
+
 // Betting configuration
 export const BET_CONFIG = {
   // Minimum bet amount (0.1 BNB)
@@ -96,4 +112,14 @@ export function getAddressExplorerUrl(chainId: number, address: string): string 
     ? 'https://bscscan.com' 
     : 'https://testnet.bscscan.com'
   return `${baseUrl}/address/${address}`
+}
+
+// Helper to validate Ethereum address format
+export function isValidEthereumAddress(address: string): boolean {
+  return /^0x[a-fA-F0-9]{40}$/.test(address)
+}
+
+// Validate escrow wallet address on module load
+if (!isValidEthereumAddress(ESCROW_WALLET_ADDRESS)) {
+  console.error(`Invalid escrow wallet address: ${ESCROW_WALLET_ADDRESS}`)
 }
