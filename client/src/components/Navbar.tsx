@@ -19,39 +19,39 @@ export function Navbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center gap-8">
-            <div className="flex items-center gap-3">
+            <Link href="/" className="flex items-center gap-3">
               <img src={logoImage} alt="BNBall" className="h-8 w-8" />
               <span className="text-xl font-bold">BNBall</span>
-            </div>
+            </Link>
             
             <div className="hidden md:flex items-center gap-6">
               <Link 
-                href="/" 
-                className={`text-sm font-medium hover:text-primary transition-colors ${isActive('/') ? 'text-primary' : ''}`}
+                href="/markets" 
+                className={`text-sm font-medium hover:text-primary transition-colors ${isActive('/markets') ? 'text-primary' : ''}`}
                 data-testid="link-markets"
               >
                 Markets
               </Link>
               <Link 
-                href="/create" 
-                className={`text-sm font-medium hover:text-primary transition-colors ${isActive('/create') ? 'text-primary' : ''}`}
-                data-testid="link-create"
+                href="/how-it-works" 
+                className={`text-sm font-medium hover:text-primary transition-colors ${isActive('/how-it-works') ? 'text-primary' : ''}`}
+                data-testid="link-how-it-works"
               >
-                Create
+                How It Works
               </Link>
               <Link 
-                href="/leaderboard" 
-                className={`text-sm font-medium hover:text-primary transition-colors ${isActive('/leaderboard') ? 'text-primary' : ''}`}
-                data-testid="link-leaderboard"
+                href="/tokenomics" 
+                className={`text-sm font-medium hover:text-primary transition-colors ${isActive('/tokenomics') ? 'text-primary' : ''}`}
+                data-testid="link-tokenomics"
               >
-                Leaderboard
+                Tokenomics
               </Link>
               <Link 
-                href="/faq" 
-                className={`text-sm font-medium hover:text-primary transition-colors ${isActive('/faq') ? 'text-primary' : ''}`}
-                data-testid="link-faq"
+                href="/oracle" 
+                className={`text-sm font-medium hover:text-primary transition-colors ${isActive('/oracle') ? 'text-primary' : ''}`}
+                data-testid="link-oracle"
               >
-                FAQ
+                Oracle
               </Link>
             </div>
           </div>
@@ -109,32 +109,32 @@ export function Navbar() {
         <div className="md:hidden border-t">
           <div className="px-4 py-4 space-y-3">
             <Link 
-              href="/" 
-              className={`block text-sm font-medium hover:text-primary transition-colors py-2 ${isActive('/') ? 'text-primary' : ''}`}
+              href="/markets" 
+              className={`block text-sm font-medium hover:text-primary transition-colors py-2 ${isActive('/markets') ? 'text-primary' : ''}`}
               onClick={() => setMobileMenuOpen(false)}
             >
               Markets
             </Link>
             <Link 
-              href="/create" 
-              className={`block text-sm font-medium hover:text-primary transition-colors py-2 ${isActive('/create') ? 'text-primary' : ''}`}
+              href="/how-it-works" 
+              className={`block text-sm font-medium hover:text-primary transition-colors py-2 ${isActive('/how-it-works') ? 'text-primary' : ''}`}
               onClick={() => setMobileMenuOpen(false)}
             >
-              Create
+              How It Works
             </Link>
             <Link 
-              href="/leaderboard" 
-              className={`block text-sm font-medium hover:text-primary transition-colors py-2 ${isActive('/leaderboard') ? 'text-primary' : ''}`}
+              href="/tokenomics" 
+              className={`block text-sm font-medium hover:text-primary transition-colors py-2 ${isActive('/tokenomics') ? 'text-primary' : ''}`}
               onClick={() => setMobileMenuOpen(false)}
             >
-              Leaderboard
+              Tokenomics
             </Link>
             <Link 
-              href="/faq" 
-              className={`block text-sm font-medium hover:text-primary transition-colors py-2 ${isActive('/faq') ? 'text-primary' : ''}`}
+              href="/oracle" 
+              className={`block text-sm font-medium hover:text-primary transition-colors py-2 ${isActive('/oracle') ? 'text-primary' : ''}`}
               onClick={() => setMobileMenuOpen(false)}
             >
-              FAQ
+              Oracle
             </Link>
             {isConnected ? (
               <div className="flex items-center gap-2 sm:hidden">

@@ -10,10 +10,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Clock, Users, TrendingUp, Info, AlertCircle } from "lucide-react";
+import { Clock, Users, TrendingUp, Info, AlertCircle, Loader2, ExternalLink } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { usePlaceBet, useClaimWinnings } from "@/hooks/usePredictionMarket";
+import { useWeb3 } from "@/hooks/useWeb3";
+import { validateBetAmount, formatBNB, toBNBWei } from "@/utils/blockchain";
+import { getExplorerUrl, BET_CONFIG, isContractDeployed } from "@/lib/contractConfig";
+import { useChainId } from "wagmi";
 
 interface MarketDetailsModalProps {
   open: boolean;
@@ -38,6 +43,25 @@ export function MarketDetailsModal({ open, onOpenChange, market }: MarketDetails
   const [betAmount, setBetAmount] = useState("");
   const [selectedOption, setSelectedOption] = useState<"yes" | "no">("yes");
   const { toast } = useToast();
+  const chainId = useChainId();
+  
+  const { isConnected, connect, formattedBalance } = useWeb3();
+  const { 
+    placeBet, 
+    isLoading: isPlacingBet, 
+    isSuccess: betSuccess,
+    txHash: betTxHash,
+    gasEstimate 
+  } = usePlaceBet();
+  
+  const {
+    claimWinnings,
+    isLoading: isClaimingWinnings,
+    isSuccess: claimSuccess,
+    txHash: claimTxHash
+  } = useClaimWinnings();
+
+  const contractDeployed = isContractDeployed(chainId);
 
   const calculatePotentialReturn = () => {
     if (!betAmount || isNaN(parseFloat(betAmount))) return "0.00";
@@ -47,13 +71,88 @@ export function MarketDetailsModal({ open, onOpenChange, market }: MarketDetails
     return (amount * multiplier).toFixed(3);
   };
 
-  const handlePlaceBet = () => {
-    toast({
-      title: "Bet Placed! (Demo)",
-      description: `Simulated ${betAmount} BNB on ${selectedOption.toUpperCase()}. In production, this would trigger a smart contract transaction.`,
-    });
-    setBetAmount("");
-    onOpenChange(false);
+  const handlePlaceBet = async () => {
+    if (!isConnected) {
+      toast({
+        title: "Wallet Not Connected",
+        description: "Please connect your wallet to place a bet",
+        variant: "destructive",
+      });
+      connect();
+      return;
+    }
+
+    if (!contractDeployed) {
+      toast({
+        title: "Contract Not Deployed",
+        description: "The prediction market contract is not yet deployed on this network. Please check the documentation for deployment instructions.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const validation = validateBetAmount(betAmount);
+    if (!validation.isValid) {
+      toast({
+        title: "Invalid Bet Amount",
+        description: validation.error,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const marketId = parseInt(market.id);
+    const prediction = selectedOption === "yes";
+    
+    await placeBet(marketId, prediction, betAmount);
+  };
+
+  const handleClaimWinnings = async () => {
+    if (!isConnected) {
+      toast({
+        title: "Wallet Not Connected",
+        description: "Please connect your wallet to claim winnings",
+        variant: "destructive",
+      });
+      connect();
+      return;
+    }
+
+    if (!contractDeployed) {
+      toast({
+        title: "Contract Not Deployed",
+        description: "The prediction market contract is not yet deployed on this network.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const marketId = parseInt(market.id);
+    await claimWinnings(marketId);
+  };
+
+  useEffect(() => {
+    if (betSuccess) {
+      setBetAmount("");
+      setTimeout(() => {
+        onOpenChange(false);
+      }, 2000);
+    }
+  }, [betSuccess, onOpenChange]);
+
+  const getButtonText = () => {
+    if (!isConnected) return "Connect Wallet to Bet";
+    if (!contractDeployed) return "Contract Not Deployed";
+    if (isPlacingBet) return "Confirming Transaction...";
+    if (market.status !== "live") return "Market Not Active";
+    return "Place Bet on Blockchain";
+  };
+
+  const isButtonDisabled = () => {
+    if (isPlacingBet) return true;
+    if (market.status !== "live") return true;
+    if (!betAmount || parseFloat(betAmount) <= 0) return true;
+    return false;
   };
 
   return (
@@ -130,16 +229,28 @@ export function MarketDetailsModal({ open, onOpenChange, market }: MarketDetails
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="bet-amount">Bet Amount (BNB)</Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="bet-amount">Bet Amount (BNB)</Label>
+                {isConnected && formattedBalance && (
+                  <span className="text-xs text-muted-foreground">
+                    Balance: {formattedBalance}
+                  </span>
+                )}
+              </div>
               <Input
                 id="bet-amount"
                 type="number"
                 step="0.001"
-                placeholder="0.000"
+                min={BET_CONFIG.MIN_BET_AMOUNT_DISPLAY}
+                placeholder={`Min: ${BET_CONFIG.MIN_BET_AMOUNT_DISPLAY} BNB`}
                 value={betAmount}
                 onChange={(e) => setBetAmount(e.target.value)}
+                disabled={isPlacingBet}
                 data-testid="input-bet-amount"
               />
+              <p className="text-xs text-muted-foreground">
+                Minimum bet: {BET_CONFIG.MIN_BET_AMOUNT_DISPLAY} BNB
+              </p>
             </div>
 
             <div className="bg-muted/50 p-4 rounded-lg space-y-2">
@@ -159,24 +270,100 @@ export function MarketDetailsModal({ open, onOpenChange, market }: MarketDetails
                   {selectedOption === "yes" ? market.yesOdds : market.noOdds}%
                 </span>
               </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Est. Gas Fee</span>
+                <span className="font-mono text-xs">
+                  ~{gasEstimate} BNB
+                </span>
+              </div>
             </div>
 
-            <div className="flex items-start gap-2 p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
-              <Info className="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" />
-              <p className="text-xs text-muted-foreground">
-                This is a demo simulation. In production, clicking "Place Bet" would create a blockchain transaction requiring wallet confirmation.
-              </p>
-            </div>
+            {!contractDeployed && (
+              <div className="flex items-start gap-2 p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg">
+                <AlertCircle className="w-4 h-4 text-amber-500 mt-0.5 flex-shrink-0" />
+                <div className="text-xs">
+                  <p className="font-semibold text-amber-500 mb-1">Contract Not Deployed</p>
+                  <p className="text-muted-foreground">
+                    The prediction market smart contract needs to be deployed before you can place bets. 
+                    Please check the <code className="text-xs bg-muted px-1 py-0.5 rounded">contractConfig.ts</code> file 
+                    for deployment instructions.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {contractDeployed && (
+              <div className="flex items-start gap-2 p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+                <Info className="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" />
+                <p className="text-xs text-muted-foreground">
+                  This will create a real blockchain transaction on BSC {chainId === 56 ? 'Mainnet' : 'Testnet'}. 
+                  You'll need to confirm the transaction in your wallet and pay gas fees.
+                </p>
+              </div>
+            )}
+
+            {betTxHash && (
+              <div className="flex items-start gap-2 p-3 bg-green-500/10 border border-green-500/20 rounded-lg">
+                <Info className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
+                <div className="flex-1">
+                  <p className="text-xs text-muted-foreground mb-1">
+                    Transaction submitted successfully!
+                  </p>
+                  <a 
+                    href={getExplorerUrl(chainId, betTxHash)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs text-green-500 hover:underline flex items-center gap-1"
+                  >
+                    View on BSCScan <ExternalLink className="w-3 h-3" />
+                  </a>
+                </div>
+              </div>
+            )}
 
             <Button 
               className="w-full" 
               size="lg"
-              disabled={!betAmount || parseFloat(betAmount) <= 0 || market.status !== "live"}
-              onClick={handlePlaceBet}
+              disabled={isButtonDisabled()}
+              onClick={isConnected ? handlePlaceBet : connect}
               data-testid="button-confirm-bet"
             >
-              {market.status === "live" ? "Place Bet (Demo)" : "Market Not Active"}
+              {isPlacingBet && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {getButtonText()}
             </Button>
+
+            {market.status === "completed" && market.result && (
+              <Button 
+                className="w-full" 
+                size="lg"
+                variant="outline"
+                disabled={isClaimingWinnings || !contractDeployed}
+                onClick={handleClaimWinnings}
+                data-testid="button-claim-winnings"
+              >
+                {isClaimingWinnings && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {isClaimingWinnings ? "Claiming Winnings..." : "Claim Winnings"}
+              </Button>
+            )}
+
+            {claimTxHash && (
+              <div className="flex items-start gap-2 p-3 bg-green-500/10 border border-green-500/20 rounded-lg">
+                <Info className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
+                <div className="flex-1">
+                  <p className="text-xs text-muted-foreground mb-1">
+                    Winnings claimed successfully!
+                  </p>
+                  <a 
+                    href={getExplorerUrl(chainId, claimTxHash)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs text-green-500 hover:underline flex items-center gap-1"
+                  >
+                    View on BSCScan <ExternalLink className="w-3 h-3" />
+                  </a>
+                </div>
+              </div>
+            )}
           </TabsContent>
 
           <TabsContent value="details" className="space-y-4 mt-4">
@@ -232,7 +419,7 @@ export function MarketDetailsModal({ open, onOpenChange, market }: MarketDetails
 
           <TabsContent value="activity" className="space-y-3 mt-4">
             <div className="text-sm text-muted-foreground mb-4">
-              Recent betting activity (demo data)
+              Recent betting activity {!contractDeployed && "(demo data - connect to blockchain for real data)"}
             </div>
             {[
               { user: "0x7a2b...3d4e", prediction: "YES", amount: "2.5 BNB", time: "2 min ago" },

@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { TrendingUp, Shield, Zap } from "lucide-react";
+import { Link } from "wouter";
 import heroImage from "@assets/generated_images/Futuristic_sports_stadium_hero_0befccdc.png";
 
 export function Hero() {
@@ -28,23 +29,25 @@ export function Hero() {
         </p>
         
         <div className="flex flex-wrap items-center justify-center gap-4 mb-16">
-          <Button 
-            size="lg" 
-            className="text-lg px-8 h-12"
-            data-testid="button-start-predicting"
-            onClick={() => console.log('Navigate to markets')}
-          >
-            Start Predicting
-          </Button>
-          <Button 
-            size="lg" 
-            variant="outline" 
-            className="text-lg px-8 h-12 bg-background/20 backdrop-blur-md border-white/20 text-white hover:bg-background/30"
-            data-testid="button-how-it-works"
-            onClick={() => console.log('Navigate to how it works')}
-          >
-            How It Works
-          </Button>
+          <Link href="/markets">
+            <Button 
+              size="lg" 
+              className="text-lg px-8 h-12"
+              data-testid="button-start-predicting"
+            >
+              Start Predicting
+            </Button>
+          </Link>
+          <Link href="/how-it-works">
+            <Button 
+              size="lg" 
+              variant="outline" 
+              className="text-lg px-8 h-12 bg-background/20 backdrop-blur-md border-white/20 text-white hover:bg-background/30"
+              data-testid="button-how-it-works"
+            >
+              How It Works
+            </Button>
+          </Link>
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto">
