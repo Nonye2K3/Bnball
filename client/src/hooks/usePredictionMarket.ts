@@ -1,5 +1,5 @@
 import { useAccount, useReadContract, useWriteContract, useWaitForTransactionReceipt, useChainId, useBalance } from 'wagmi'
-import { parseEther } from 'viem'
+import { parseEther, formatEther } from 'viem'
 import { 
   PREDICTION_MARKET_ABI, 
   getContractAddress, 
@@ -14,8 +14,10 @@ import {
   estimateGasCost,
   checkSufficientBalance
 } from '@/utils/blockchain'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useToast } from '@/hooks/use-toast'
+import { apiRequest, queryClient } from '@/lib/queryClient'
+import { persistTransaction } from './useWeb3'
 
 /**
  * Hook for placing a bet on a prediction market
@@ -41,16 +43,61 @@ export function usePlaceBet() {
   } = useWaitForTransactionReceipt({ hash })
 
   const [gasEstimate, setGasEstimate] = useState<string>('0.001')
+  const betDataRef = useRef<{ marketId: string; prediction: string; amount: string } | null>(null)
 
   useEffect(() => {
-    if (isSuccess) {
-      toast({
-        title: "Bet Placed Successfully!",
-        description: `Your bet has been confirmed on the blockchain.`,
-      })
-      reset()
+    const persistBet = async () => {
+      if (isSuccess && hash && address && betDataRef.current) {
+        try {
+          // Persist bet record
+          await apiRequest('POST', '/api/bets', {
+            marketId: betDataRef.current.marketId,
+            userAddress: address,
+            prediction: betDataRef.current.prediction,
+            amount: betDataRef.current.amount,
+            transactionHash: hash,
+            chainId,
+            claimed: false,
+          })
+          
+          // Persist transaction record
+          await persistTransaction({
+            userAddress: address,
+            type: 'bet',
+            transactionHash: hash,
+            status: 'success',
+            chainId,
+            value: betDataRef.current.amount,
+            metadata: JSON.stringify({
+              marketId: betDataRef.current.marketId,
+              prediction: betDataRef.current.prediction,
+            }),
+          })
+          
+          // Invalidate relevant queries
+          await queryClient.invalidateQueries({ queryKey: [`/api/bets/${address}`] })
+          await queryClient.invalidateQueries({ queryKey: [`/api/transactions/${address}`] })
+          
+          toast({
+            title: "Bet Placed Successfully!",
+            description: `Your bet has been confirmed and saved.`,
+          })
+        } catch (error) {
+          console.error('Failed to persist bet:', error)
+          toast({
+            title: "Bet Recorded on Blockchain",
+            description: "Your bet is confirmed on-chain but failed to save locally. It will sync automatically.",
+            variant: "destructive",
+          })
+        } finally {
+          betDataRef.current = null
+          reset()
+        }
+      }
     }
-  }, [isSuccess, toast, reset])
+    
+    persistBet()
+  }, [isSuccess, hash, address, chainId, toast, reset])
 
   useEffect(() => {
     if (writeError || confirmError) {
@@ -122,6 +169,13 @@ export function usePlaceBet() {
     const gasCost = estimateGasCost(GAS_LIMITS.PLACE_BET)
     setGasEstimate(gasCost.gasCostBNB)
 
+    // Store bet data for persistence after transaction succeeds (amount as wei string)
+    betDataRef.current = {
+      marketId: marketId.toString(),
+      prediction: prediction ? 'yes' : 'no',
+      amount: betAmountWei.toString(),
+    }
+
     try {
       writeContract({
         address: getContractAddress(chainId),
@@ -131,6 +185,7 @@ export function usePlaceBet() {
         value: betAmountWei,
       })
     } catch (error) {
+      betDataRef.current = null
       toast({
         title: "Transaction Error",
         description: parseBlockchainError(error),
@@ -172,15 +227,64 @@ export function useCreateMarket() {
     error: confirmError 
   } = useWaitForTransactionReceipt({ hash })
 
+  const marketDataRef = useRef<{ title: string; description: string; category: string; deadline: Date } | null>(null)
+
   useEffect(() => {
-    if (isSuccess) {
-      toast({
-        title: "Market Created Successfully!",
-        description: `Your prediction market is now live on the blockchain.`,
-      })
-      reset()
+    const persistMarket = async () => {
+      if (isSuccess && hash && address && marketDataRef.current) {
+        try {
+          // Persist market record
+          await apiRequest('POST', '/api/markets', {
+            title: marketDataRef.current.title,
+            description: marketDataRef.current.description,
+            category: marketDataRef.current.category,
+            status: 'live',
+            startTime: new Date(),
+            deadline: marketDataRef.current.deadline,
+            resolutionMethod: 'oracle',
+            transactionHash: hash,
+            chainId,
+            creatorAddress: address,
+          })
+          
+          // Persist transaction record
+          await persistTransaction({
+            userAddress: address,
+            type: 'create_market',
+            transactionHash: hash,
+            status: 'success',
+            chainId,
+            value: BET_CONFIG.CREATE_MARKET_STAKE.toString(),
+            metadata: JSON.stringify({
+              title: marketDataRef.current.title,
+              category: marketDataRef.current.category,
+            }),
+          })
+          
+          // Invalidate relevant queries
+          await queryClient.invalidateQueries({ queryKey: ['/api/markets'] })
+          await queryClient.invalidateQueries({ queryKey: ['/api/transactions', address] })
+          
+          toast({
+            title: "Market Created Successfully!",
+            description: `Your prediction market is now live.`,
+          })
+        } catch (error) {
+          console.error('Failed to persist market:', error)
+          toast({
+            title: "Market Created on Blockchain",
+            description: "Your market is live on-chain but failed to save locally. It will sync automatically.",
+            variant: "destructive",
+          })
+        } finally {
+          marketDataRef.current = null
+          reset()
+        }
+      }
     }
-  }, [isSuccess, toast, reset])
+    
+    persistMarket()
+  }, [isSuccess, hash, address, chainId, toast, reset])
 
   useEffect(() => {
     if (writeError || confirmError) {
@@ -240,6 +344,14 @@ export function useCreateMarket() {
 
     const deadlineTimestamp = BigInt(Math.floor(deadline.getTime() / 1000))
 
+    // Store market data for persistence after transaction succeeds
+    marketDataRef.current = {
+      title,
+      description,
+      category,
+      deadline,
+    }
+
     try {
       writeContract({
         address: getContractAddress(chainId),
@@ -249,6 +361,7 @@ export function useCreateMarket() {
         value: stakeAmount,
       })
     } catch (error) {
+      marketDataRef.current = null
       toast({
         title: "Transaction Error",
         description: parseBlockchainError(error),
@@ -288,15 +401,69 @@ export function useClaimWinnings() {
     error: confirmError 
   } = useWaitForTransactionReceipt({ hash })
 
+  const marketIdRef = useRef<number | null>(null)
+
   useEffect(() => {
-    if (isSuccess) {
-      toast({
-        title: "Winnings Claimed!",
-        description: `Your winnings have been transferred to your wallet.`,
-      })
-      reset()
+    const markBetAsClaimed = async () => {
+      if (isSuccess && hash && address && marketIdRef.current !== null) {
+        try {
+          // Fetch user's bets to find the bet for this market
+          const betsResponse = await fetch(`/api/bets/${address}`)
+          const bets = await betsResponse.json()
+          
+          // Find the bet for this market
+          const bet = bets.find((b: any) => b.marketId === marketIdRef.current?.toString() && !b.claimed)
+          
+          if (bet) {
+            // Mark bet as claimed
+            await apiRequest('PATCH', `/api/bets/${bet.id}/claim`, {
+              claimTransactionHash: hash,
+            })
+            
+            // Persist transaction record
+            await persistTransaction({
+              userAddress: address,
+              type: 'claim',
+              transactionHash: hash,
+              status: 'success',
+              chainId,
+              value: bet.amount || '0',
+              metadata: JSON.stringify({
+                marketId: marketIdRef.current,
+                betId: bet.id,
+              }),
+            })
+            
+            // Invalidate relevant queries
+            await queryClient.invalidateQueries({ queryKey: [`/api/bets/${address}`] })
+            await queryClient.invalidateQueries({ queryKey: [`/api/transactions/${address}`] })
+            
+            toast({
+              title: "Winnings Claimed!",
+              description: `Your winnings have been transferred to your wallet.`,
+            })
+          } else {
+            toast({
+              title: "Winnings Claimed on Blockchain",
+              description: "Your winnings are claimed on-chain but the local record couldn't be updated.",
+            })
+          }
+        } catch (error) {
+          console.error('Failed to mark bet as claimed:', error)
+          toast({
+            title: "Winnings Claimed on Blockchain",
+            description: "Your winnings are claimed on-chain but failed to update locally. It will sync automatically.",
+            variant: "destructive",
+          })
+        } finally {
+          marketIdRef.current = null
+          reset()
+        }
+      }
     }
-  }, [isSuccess, toast, reset])
+    
+    markBetAsClaimed()
+  }, [isSuccess, hash, address, chainId, toast, reset])
 
   useEffect(() => {
     if (writeError || confirmError) {
@@ -328,6 +495,9 @@ export function useClaimWinnings() {
       return
     }
 
+    // Store marketId for persistence after transaction succeeds
+    marketIdRef.current = marketId
+
     try {
       writeContract({
         address: getContractAddress(chainId),
@@ -336,6 +506,7 @@ export function useClaimWinnings() {
         args: [BigInt(marketId)],
       })
     } catch (error) {
+      marketIdRef.current = null
       toast({
         title: "Transaction Error",
         description: parseBlockchainError(error),

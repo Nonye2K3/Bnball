@@ -19,6 +19,7 @@ import { useWeb3 } from "@/hooks/useWeb3";
 import { validateBetAmount, formatBNB, toBNBWei } from "@/utils/blockchain";
 import { getExplorerUrl, BET_CONFIG, isContractDeployed } from "@/lib/contractConfig";
 import { useChainId } from "wagmi";
+import { ConfigurationAlert } from "./ConfigurationAlert";
 
 interface MarketDetailsModalProps {
   open: boolean;
@@ -191,6 +192,8 @@ export function MarketDetailsModal({ open, onOpenChange, market }: MarketDetails
           </TabsList>
 
           <TabsContent value="bet" className="space-y-4 mt-4">
+            <ConfigurationAlert variant="compact" showTitle={false} />
+            
             <div className="grid grid-cols-2 gap-3">
               <button
                 onClick={() => setSelectedOption("yes")}
@@ -277,20 +280,6 @@ export function MarketDetailsModal({ open, onOpenChange, market }: MarketDetails
                 </span>
               </div>
             </div>
-
-            {!contractDeployed && (
-              <div className="flex items-start gap-2 p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg">
-                <AlertCircle className="w-4 h-4 text-amber-500 mt-0.5 flex-shrink-0" />
-                <div className="text-xs">
-                  <p className="font-semibold text-amber-500 mb-1">Contract Not Deployed</p>
-                  <p className="text-muted-foreground">
-                    The prediction market smart contract needs to be deployed before you can place bets. 
-                    Please check the <code className="text-xs bg-muted px-1 py-0.5 rounded">contractConfig.ts</code> file 
-                    for deployment instructions.
-                  </p>
-                </div>
-              </div>
-            )}
 
             {contractDeployed && (
               <div className="flex items-start gap-2 p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">

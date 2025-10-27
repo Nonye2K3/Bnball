@@ -3,14 +3,20 @@ import { Badge } from "@/components/ui/badge";
 import { ThemeToggle } from "./ThemeToggle";
 import { useWeb3 } from "@/hooks/useWeb3";
 import { Wallet, Menu, X, LogOut } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import logoImage from "@assets/generated_images/BNBall_logo_design_5d68f7d3.png";
 
 export function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const [location] = useLocation();
   const { isConnected, formattedAddress, chain, connect, disconnect, isConnecting } = useWeb3();
+  
+  // Prevent hydration mismatch by only showing connection-dependent UI after mount
+  useEffect(() => {
+    setMounted(true);
+  }, []);
   
   const isActive = (path: string) => location === path;
 
@@ -53,7 +59,7 @@ export function Navbar() {
               >
                 Oracle
               </Link>
-              {isConnected && (
+              {mounted && isConnected && (
                 <Link 
                   href="/profile" 
                   className={`text-sm font-medium hover:text-primary transition-colors ${isActive('/profile') ? 'text-primary' : ''}`}
@@ -67,39 +73,43 @@ export function Navbar() {
           
           <div className="flex items-center gap-3">
             <ThemeToggle />
-            {isConnected ? (
-              <div className="hidden sm:flex items-center gap-2">
-                <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-green-500/10 border border-green-500/20">
-                  <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
-                  <code className="text-xs font-mono" data-testid="text-connected-address">
-                    {formattedAddress}
-                  </code>
-                  {chain && (
-                    <Badge variant="outline" className="text-xs">
-                      {chain.name}
-                    </Badge>
-                  )}
-                </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => disconnect()}
-                  data-testid="button-disconnect-wallet"
-                  title="Disconnect Wallet"
-                >
-                  <LogOut className="w-4 h-4" />
-                </Button>
-              </div>
-            ) : (
-              <Button 
-                className="hidden sm:flex items-center gap-2"
-                data-testid="button-connect-wallet"
-                onClick={() => connect()}
-                disabled={isConnecting}
-              >
-                <Wallet className="w-4 h-4" />
-                {isConnecting ? "Connecting..." : "Connect Wallet"}
-              </Button>
+            {mounted && (
+              <>
+                {isConnected ? (
+                  <div className="hidden sm:flex items-center gap-2">
+                    <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-green-500/10 border border-green-500/20">
+                      <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+                      <code className="text-xs font-mono" data-testid="text-connected-address">
+                        {formattedAddress}
+                      </code>
+                      {chain && (
+                        <Badge variant="outline" className="text-xs">
+                          {chain.name}
+                        </Badge>
+                      )}
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => disconnect()}
+                      data-testid="button-disconnect-wallet"
+                      title="Disconnect Wallet"
+                    >
+                      <LogOut className="w-4 h-4" />
+                    </Button>
+                  </div>
+                ) : (
+                  <Button 
+                    className="hidden sm:flex items-center gap-2"
+                    data-testid="button-connect-wallet"
+                    onClick={() => connect()}
+                    disabled={isConnecting}
+                  >
+                    <Wallet className="w-4 h-4" />
+                    {isConnecting ? "Connecting..." : "Connect Wallet"}
+                  </Button>
+                )}
+              </>
             )}
             <Button
               variant="ghost"
@@ -145,7 +155,7 @@ export function Navbar() {
             >
               Oracle
             </Link>
-            {isConnected && (
+            {mounted && isConnected && (
               <Link 
                 href="/profile" 
                 className={`block text-sm font-medium hover:text-primary transition-colors py-2 ${isActive('/profile') ? 'text-primary' : ''}`}
@@ -155,39 +165,43 @@ export function Navbar() {
                 Profile
               </Link>
             )}
-            {isConnected ? (
-              <div className="flex items-center gap-2 sm:hidden">
-                <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-green-500/10 border border-green-500/20">
-                  <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
-                  <code className="text-xs font-mono" data-testid="text-connected-address-mobile">
-                    {formattedAddress}
-                  </code>
-                  {chain && (
-                    <Badge variant="outline" className="text-xs">
-                      {chain.name}
-                    </Badge>
-                  )}
-                </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => disconnect()}
-                  data-testid="button-disconnect-wallet-mobile"
-                >
-                  <LogOut className="w-4 h-4" />
-                  Disconnect
-                </Button>
-              </div>
-            ) : (
-              <Button 
-                className="w-full flex items-center justify-center gap-2 sm:hidden"
-                onClick={() => connect()}
-                disabled={isConnecting}
-                data-testid="button-connect-wallet-mobile"
-              >
-                <Wallet className="w-4 h-4" />
-                {isConnecting ? "Connecting..." : "Connect Wallet"}
-              </Button>
+            {mounted && (
+              <>
+                {isConnected ? (
+                  <div className="flex items-center gap-2 sm:hidden">
+                    <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-green-500/10 border border-green-500/20">
+                      <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+                      <code className="text-xs font-mono" data-testid="text-connected-address-mobile">
+                        {formattedAddress}
+                      </code>
+                      {chain && (
+                        <Badge variant="outline" className="text-xs">
+                          {chain.name}
+                        </Badge>
+                      )}
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => disconnect()}
+                      data-testid="button-disconnect-wallet-mobile"
+                    >
+                      <LogOut className="w-4 h-4" />
+                      Disconnect
+                    </Button>
+                  </div>
+                ) : (
+                  <Button 
+                    className="w-full flex items-center justify-center gap-2 sm:hidden"
+                    onClick={() => connect()}
+                    disabled={isConnecting}
+                    data-testid="button-connect-wallet-mobile"
+                  >
+                    <Wallet className="w-4 h-4" />
+                    {isConnecting ? "Connecting..." : "Connect Wallet"}
+                  </Button>
+                )}
+              </>
             )}
           </div>
         </div>

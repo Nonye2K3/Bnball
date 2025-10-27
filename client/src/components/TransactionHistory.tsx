@@ -3,12 +3,13 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useWeb3 } from "@/hooks/useWeb3";
-import { useUserBets } from "@/hooks/usePredictionMarket";
 import { ExternalLink, Filter, Clock, TrendingUp } from "lucide-react";
 import { motion } from "framer-motion";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { formatDistanceToNow } from "date-fns";
 import { formatEther } from "viem";
+import { useQuery } from "@tanstack/react-query";
+import type { Transaction as DBTransaction } from "@shared/schema";
 
 type TransactionType = "All" | "Bets" | "Claims" | "Markets";
 
@@ -19,26 +20,20 @@ interface Transaction {
   amount: string;
   status: "Pending" | "Success" | "Failed";
   timestamp: Date;
-  marketId?: number;
-  prediction?: boolean;
+  metadata?: string;
 }
 
 export function TransactionHistory() {
   const { address, isConnected, chain } = useWeb3();
   const [filter, setFilter] = useState<TransactionType>("All");
   const [visibleCount, setVisibleCount] = useState(10);
-  const { bets, isLoading, refetch } = useUserBets();
-
-  // Auto-refresh every 15 seconds
-  useEffect(() => {
-    if (!isConnected) return;
-    
-    const interval = setInterval(() => {
-      refetch();
-    }, 15000);
-
-    return () => clearInterval(interval);
-  }, [isConnected, refetch]);
+  
+  // Fetch transactions from database
+  const { data: dbTransactions, isLoading } = useQuery<DBTransaction[]>({
+    queryKey: [`/api/transactions/${address}`],
+    enabled: !!address && isConnected,
+    refetchInterval: 15000,
+  });
 
   if (!isConnected || !address) {
     return (
@@ -53,18 +48,30 @@ export function TransactionHistory() {
     );
   }
 
-  // Convert bets data to transaction format
-  const transactions: Transaction[] = (bets && Array.isArray(bets))
-    ? bets.map((bet: any, index: number) => ({
-        id: `bet-${index}`,
-        type: "Bet" as const,
-        hash: `0x${Math.random().toString(16).substr(2, 64)}`, // Mock hash - replace with actual tx hash from events
-        amount: formatEther(bet.amount),
-        status: "Success" as const,
-        timestamp: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000), // Mock timestamp
-        marketId: Number(bet.marketId),
-        prediction: bet.prediction,
-      }))
+  // Convert database transactions to UI format
+  const transactions: Transaction[] = (dbTransactions && Array.isArray(dbTransactions))
+    ? dbTransactions.map((tx: DBTransaction) => {
+        // Map transaction type
+        let type: "Bet" | "Claim" | "Market" = "Bet";
+        if (tx.type === "place_bet") type = "Bet";
+        else if (tx.type === "claim_winnings" || tx.type === "claim") type = "Claim";
+        else if (tx.type === "create_market") type = "Market";
+        
+        // Map status
+        let status: "Pending" | "Success" | "Failed" = "Success";
+        if (tx.status === "pending") status = "Pending";
+        else if (tx.status === "failed") status = "Failed";
+        
+        return {
+          id: tx.id,
+          type,
+          hash: tx.transactionHash,
+          amount: formatEther(BigInt(tx.value)),
+          status,
+          timestamp: new Date(tx.timestamp),
+          metadata: tx.metadata || undefined,
+        };
+      })
     : [];
 
   const filteredTransactions = transactions.filter((tx) => {
@@ -195,21 +202,6 @@ export function TransactionHistory() {
                       <Badge className={getStatusColor(tx.status)} data-testid={`badge-status-${tx.status.toLowerCase()}`}>
                         {tx.status}
                       </Badge>
-                      {tx.marketId !== undefined && (
-                        <Badge variant="outline" className="text-xs">
-                          Market #{tx.marketId}
-                        </Badge>
-                      )}
-                      {tx.prediction !== undefined && (
-                        <Badge 
-                          className={tx.prediction 
-                            ? "bg-green-500/10 text-green-500 border-green-500/20"
-                            : "bg-red-500/10 text-red-500 border-red-500/20"
-                          }
-                        >
-                          {tx.prediction ? "YES" : "NO"}
-                        </Badge>
-                      )}
                     </div>
                     
                     <div className="flex items-center gap-2 mb-1">

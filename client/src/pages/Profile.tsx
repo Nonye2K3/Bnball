@@ -3,6 +3,7 @@ import { Footer } from "@/components/Footer";
 import { WalletBalance } from "@/components/WalletBalance";
 import { BettingHistory } from "@/components/BettingHistory";
 import { TransactionHistory } from "@/components/TransactionHistory";
+import { ConfigurationAlert } from "@/components/ConfigurationAlert";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -115,6 +116,15 @@ export default function Profile() {
           <p className="text-muted-foreground">
             View your wallet balance, betting history, and statistics
           </p>
+        </motion.div>
+
+        <motion.div
+          initial={{ y: -20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ duration: 0.5, delay: 0.1 }}
+          className="mb-6"
+        >
+          <ConfigurationAlert variant="default" showTitle={true} />
         </motion.div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">

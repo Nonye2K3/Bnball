@@ -3,12 +3,14 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useWeb3 } from "@/hooks/useWeb3";
-import { useUserBets, useClaimWinnings } from "@/hooks/usePredictionMarket";
+import { useClaimWinnings } from "@/hooks/usePredictionMarket";
 import { TrendingUp, Trophy, XCircle, Clock, Coins } from "lucide-react";
 import { motion } from "framer-motion";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { formatDistanceToNow } from "date-fns";
 import { formatEther } from "viem";
+import { useQuery } from "@tanstack/react-query";
+import type { Bet } from "@shared/schema";
 
 type BetStatus = "All" | "Active" | "Won" | "Lost" | "Unclaimed";
 
@@ -29,19 +31,14 @@ interface BetInfo {
 export function BettingHistory() {
   const { address, isConnected } = useWeb3();
   const [filter, setFilter] = useState<BetStatus>("All");
-  const { bets, isLoading, refetch } = useUserBets();
   const { claimWinnings, isLoading: isClaiming } = useClaimWinnings();
 
-  // Auto-refresh to get latest bet data
-  useEffect(() => {
-    if (!isConnected) return;
-    
-    const interval = setInterval(() => {
-      refetch();
-    }, 15000);
-
-    return () => clearInterval(interval);
-  }, [isConnected, refetch]);
+  // Fetch bets from database
+  const { data: bets, isLoading } = useQuery<Bet[]>({
+    queryKey: [`/api/bets/${address}`],
+    enabled: !!address && isConnected,
+    refetchInterval: 15000,
+  });
 
   if (!isConnected || !address) {
     return (
@@ -56,33 +53,32 @@ export function BettingHistory() {
     );
   }
 
-  // Convert blockchain bets to UI format
+  // Convert database bets to UI format
   const betHistory: BetInfo[] = (bets && Array.isArray(bets))
-    ? bets.map((bet: any, index: number) => {
-        const amount = formatEther(bet.amount);
-        const odds = 2.5; // Mock odds - calculate from pool distribution
-        const potentialWinnings = (parseFloat(amount) * odds).toFixed(4);
+    ? bets.map((bet: Bet, index: number) => {
+        // Format amount from wei string to ether (convert string to bigint first)
+        const amount = formatEther(BigInt(bet.amount));
         
-        // Mock status based on bet data
+        // Determine status from database data
+        // For now, all bets are "Active" unless claimed
+        // TODO: Add market resolution status to determine Won/Lost
         let status: "Active" | "Won" | "Lost" | "Unclaimed" = "Active";
         if (bet.claimed) {
-          status = bet.won ? "Won" : "Lost";
-        } else if (bet.won !== undefined) {
-          status = bet.won ? "Unclaimed" : "Lost";
+          status = "Won";
         }
         
         return {
-          id: `bet-${index}`,
-          marketId: Number(bet.marketId),
-          marketTitle: `Market #${bet.marketId}`, // Replace with actual market title lookup
-          prediction: bet.prediction,
+          id: bet.id,
+          marketId: parseInt(bet.marketId),
+          marketTitle: `Market #${bet.marketId}`,
+          prediction: bet.prediction === 'yes',
           amount,
-          odds,
+          odds: 0,
           status,
-          potentialWinnings: status === "Active" ? potentialWinnings : undefined,
-          actualWinnings: status === "Won" || status === "Unclaimed" ? potentialWinnings : undefined,
-          timestamp: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000),
-          deadline: new Date(Date.now() + Math.random() * 7 * 24 * 60 * 60 * 1000),
+          potentialWinnings: undefined,
+          actualWinnings: undefined,
+          timestamp: new Date(bet.timestamp),
+          deadline: new Date(),
         };
       })
     : [];
@@ -218,10 +214,7 @@ export function BettingHistory() {
                       </span>
                     </Badge>
                     <span className="text-xs text-muted-foreground">
-                      {bet.status === "Active" 
-                        ? `Ends ${formatDistanceToNow(bet.deadline, { addSuffix: true })}`
-                        : `Placed ${formatDistanceToNow(bet.timestamp, { addSuffix: true })}`
-                      }
+                      Market #{bet.marketId}
                     </span>
                   </div>
                 </div>
@@ -236,16 +229,18 @@ export function BettingHistory() {
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground mb-1">Odds</p>
-                  <p className="font-mono font-semibold" data-testid="text-odds">
-                    {bet.odds.toFixed(2)}x
+                  <p className="font-mono font-semibold text-muted-foreground" data-testid="text-odds">
+                    N/A
                   </p>
+                  <p className="text-xs text-muted-foreground">Requires market data</p>
                 </div>
-                {bet.potentialWinnings && (
+                {bet.status === "Active" && (
                   <div>
                     <p className="text-xs text-muted-foreground mb-1">Potential Winnings</p>
-                    <p className="font-mono font-semibold text-green-500" data-testid="text-potential-winnings">
-                      {bet.potentialWinnings} BNB
+                    <p className="font-mono font-semibold text-muted-foreground" data-testid="text-potential-winnings">
+                      N/A
                     </p>
+                    <p className="text-xs text-muted-foreground">Requires market data</p>
                   </div>
                 )}
                 {bet.actualWinnings && (

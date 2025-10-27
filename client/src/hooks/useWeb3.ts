@@ -1,6 +1,42 @@
 import { useAccount, useBalance, useDisconnect, useChainId, useSwitchChain } from 'wagmi'
 import { useWeb3Modal } from '@web3modal/wagmi/react'
 import { bsc, bscTestnet } from 'wagmi/chains'
+import { apiRequest, queryClient } from '@/lib/queryClient'
+
+/**
+ * Utility to persist blockchain transaction to database
+ */
+export async function persistTransaction(params: {
+  userAddress: string
+  type: 'bet' | 'claim' | 'create_market' | 'resolve_market'
+  transactionHash: string
+  status: 'pending' | 'success' | 'failed'
+  chainId: number
+  value: string
+  gasUsed?: string
+  metadata?: string
+}) {
+  try {
+    await apiRequest('POST', '/api/transactions', {
+      userAddress: params.userAddress,
+      type: params.type,
+      transactionHash: params.transactionHash,
+      status: params.status,
+      chainId: params.chainId,
+      value: params.value,
+      gasUsed: params.gasUsed,
+      metadata: params.metadata,
+    })
+    
+    // Invalidate transaction queries
+    await queryClient.invalidateQueries({ queryKey: ['/api/transactions', params.userAddress] })
+    
+    return { success: true }
+  } catch (error) {
+    console.error('Failed to persist transaction:', error)
+    return { success: false, error }
+  }
+}
 
 export function useWeb3() {
   const { address, isConnected, isConnecting, isReconnecting } = useAccount()
