@@ -53,6 +53,15 @@ export function Navbar() {
               >
                 Oracle
               </Link>
+              {isConnected && (
+                <Link 
+                  href="/profile" 
+                  className={`text-sm font-medium hover:text-primary transition-colors ${isActive('/profile') ? 'text-primary' : ''}`}
+                  data-testid="link-profile"
+                >
+                  Profile
+                </Link>
+              )}
             </div>
           </div>
           
@@ -136,6 +145,16 @@ export function Navbar() {
             >
               Oracle
             </Link>
+            {isConnected && (
+              <Link 
+                href="/profile" 
+                className={`block text-sm font-medium hover:text-primary transition-colors py-2 ${isActive('/profile') ? 'text-primary' : ''}`}
+                onClick={() => setMobileMenuOpen(false)}
+                data-testid="link-profile-mobile"
+              >
+                Profile
+              </Link>
+            )}
             {isConnected ? (
               <div className="flex items-center gap-2 sm:hidden">
                 <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-green-500/10 border border-green-500/20">

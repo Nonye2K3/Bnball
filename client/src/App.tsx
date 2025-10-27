@@ -13,6 +13,7 @@ import Oracle from "@/pages/Oracle";
 import FAQ from "@/pages/FAQ";
 import CreateMarket from "@/pages/CreateMarket";
 import Leaderboard from "@/pages/Leaderboard";
+import Profile from "@/pages/Profile";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -29,6 +30,7 @@ function Router() {
         <Route path="/faq" component={FAQ} />
         <Route path="/create" component={CreateMarket} />
         <Route path="/leaderboard" component={Leaderboard} />
+        <Route path="/profile" component={Profile} />
         <Route component={NotFound} />
       </Switch>
     </AnimatePresence>
