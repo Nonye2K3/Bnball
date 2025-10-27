@@ -28,10 +28,14 @@ Preferred communication style: Simple, everyday language.
 - Component library based on Radix UI primitives with custom variants
 
 **Key Pages:**
-- Home: Market listings with category filters and statistics
-- Create Market: Form for creating new prediction markets
-- Leaderboard: User rankings and statistics
-- FAQ: Platform documentation
+- Home (Landing): Hero section with wallet connection and navigation
+- Markets: Live prediction markets with betting interface
+- How It Works: Platform explanation with parallax animations
+- Tokenomics: Dual-token economy details
+- Oracle: Multi-layer verification system explanation
+- Profile: User wallet balance, betting history, and transaction history
+- Leaderboard: User rankings and statistics (planned)
+- Create Market: Form for creating new prediction markets (planned)
 
 **State Management Philosophy:**
 - Server state managed through React Query with optimistic updates
@@ -47,15 +51,25 @@ Preferred communication style: Simple, everyday language.
 - **Session Management:** express-session with connect-pg-simple
 
 **Current Implementation:**
-- Minimal backend setup with placeholder routes
 - In-memory storage implementation (MemStorage) for development
+- RESTful API routes for bets, transactions, and markets
 - Prepared for PostgreSQL migration (Drizzle config present)
+
+**API Endpoints:**
+- `POST /api/bets` - Create new bet record after on-chain confirmation
+- `GET /api/bets/:userAddress` - Get betting history for a wallet
+- `POST /api/transactions` - Create transaction record
+- `GET /api/transactions/:userAddress` - Get transaction history for a wallet
+- `GET /api/markets` - Get all prediction markets
+- `GET /api/markets/:id` - Get specific market details
 
 **API Design:**
 - RESTful API with `/api` prefix
 - JSON request/response format
+- Request validation using Zod schemas
 - Request logging middleware for debugging
 - Raw body capture for webhook verification
+- Duplicate transaction prevention using transaction hash checks
 
 **Architecture Decisions:**
 1. **Problem:** Need flexible data persistence strategy
@@ -85,23 +99,33 @@ Preferred communication style: Simple, everyday language.
    - Timeline: startTime, deadline
    - Resolution: resolutionMethod, result, resolutionData
 
+3. **bets**
+   - User betting records linked to blockchain transactions
+   - Fields: id, userAddress (wallet), marketId, prediction (true/false), amount (wei as string), transactionHash, timestamp
+
+4. **transactions**
+   - Blockchain transaction history
+   - Fields: id, userAddress, type (place_bet/claim_winnings/create_market), transactionHash, value (wei as string), status, timestamp, metadata
+
 **Schema Philosophy:**
 - UUID primary keys for distributed system compatibility
-- Decimal types for financial precision (18 decimals, 8 scale for crypto amounts)
+- Wei amounts stored as strings to preserve precision (converted with BigInt + formatEther for display)
+- Transaction hashes for blockchain verification and BSCScan links
 - Text fields for flexible resolution data (JSON storage for oracle responses)
-- Status tracking for market lifecycle management
+- Status tracking for market lifecycle and transaction states
 
 ### Authentication & Authorization
 
-**Current State:** Basic user schema prepared, no auth implementation yet
+**Current State:** Web3 wallet authentication fully implemented
 
-**Planned Approach:**
-- Web3 wallet-based authentication (MetaMask, Trust Wallet, WalletConnect)
-- Signature-based login (message signing for wallet verification)
+**Implementation:**
+- Web3 wallet-based authentication using wagmi v2 and @web3modal/wagmi
+- Support for MetaMask, WalletConnect, Coinbase Wallet, and other injected wallets
 - Session-based state management for connected wallets
-- No traditional password authentication for end users
+- Binance Smart Chain Mainnet (Chain ID: 56) and Testnet (Chain ID: 97) support
+- No traditional password authentication - purely wallet-based
 
-### Smart Contract Integration (Planned)
+### Smart Contract Integration
 
 **Blockchain:** Binance Smart Chain
 - **Tokens:** BNB (native), BNBALL (custom token)
@@ -109,6 +133,15 @@ Preferred communication style: Simple, everyday language.
   - Chainlink Sports Oracle for real-time sports data
   - AI verification for complex scenarios
   - Community governance voting for disputes
+
+**Implementation:**
+- Complete smart contract interaction layer with wagmi hooks
+- PredictionMarket contract ABI with functions: placeBet, claimWinnings, createMarket, resolveMarket
+- 0.1 BNB minimum bet enforcement (validated before transaction)
+- Gas estimation with 20% buffer for transaction reliability
+- Transaction confirmation with real-time status updates
+- BSCScan integration for transaction viewing
+- Bet and transaction persistence to database after on-chain confirmation
 
 **Integration Points:**
 - Escrow vault contract for holding betting funds
