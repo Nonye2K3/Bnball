@@ -1,11 +1,23 @@
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { ThemeToggle } from "./ThemeToggle";
+import { WalletConnectionModal } from "./WalletConnectionModal";
 import { Wallet, Menu, X } from "lucide-react";
 import { useState } from "react";
+import { Link, useLocation } from "wouter";
 import logoImage from "@assets/generated_images/BNBall_logo_design_5d68f7d3.png";
 
 export function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [walletModalOpen, setWalletModalOpen] = useState(false);
+  const [connectedWallet, setConnectedWallet] = useState<{ name: string; address: string } | null>(null);
+  const [location] = useLocation();
+
+  const handleWalletConnect = (walletName: string, address: string) => {
+    setConnectedWallet({ name: walletName, address });
+  };
+  
+  const isActive = (path: string) => location === path;
 
   return (
     <nav className="sticky top-0 z-50 bg-background/80 backdrop-blur-lg border-b">
@@ -18,47 +30,59 @@ export function Navbar() {
             </div>
             
             <div className="hidden md:flex items-center gap-6">
-              <a 
-                href="#markets" 
-                className="text-sm font-medium hover:text-primary transition-colors"
+              <Link 
+                href="/" 
+                className={`text-sm font-medium hover:text-primary transition-colors ${isActive('/') ? 'text-primary' : ''}`}
                 data-testid="link-markets"
               >
-                Active Markets
-              </a>
-              <a 
-                href="#how-it-works" 
-                className="text-sm font-medium hover:text-primary transition-colors"
-                data-testid="link-how-it-works"
+                Markets
+              </Link>
+              <Link 
+                href="/create" 
+                className={`text-sm font-medium hover:text-primary transition-colors ${isActive('/create') ? 'text-primary' : ''}`}
+                data-testid="link-create"
               >
-                How It Works
-              </a>
-              <a 
-                href="#tokenomics" 
-                className="text-sm font-medium hover:text-primary transition-colors"
-                data-testid="link-tokenomics"
+                Create
+              </Link>
+              <Link 
+                href="/leaderboard" 
+                className={`text-sm font-medium hover:text-primary transition-colors ${isActive('/leaderboard') ? 'text-primary' : ''}`}
+                data-testid="link-leaderboard"
               >
-                Tokenomics
-              </a>
-              <a 
-                href="#docs" 
-                className="text-sm font-medium hover:text-primary transition-colors"
-                data-testid="link-docs"
+                Leaderboard
+              </Link>
+              <Link 
+                href="/faq" 
+                className={`text-sm font-medium hover:text-primary transition-colors ${isActive('/faq') ? 'text-primary' : ''}`}
+                data-testid="link-faq"
               >
-                Docs
-              </a>
+                FAQ
+              </Link>
             </div>
           </div>
           
           <div className="flex items-center gap-3">
             <ThemeToggle />
-            <Button 
-              className="hidden sm:flex items-center gap-2"
-              data-testid="button-connect-wallet"
-              onClick={() => console.log('Connect wallet clicked')}
-            >
-              <Wallet className="w-4 h-4" />
-              Connect Wallet
-            </Button>
+            {connectedWallet ? (
+              <div className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-lg bg-green-500/10 border border-green-500/20">
+                <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+                <code className="text-xs font-mono" data-testid="text-connected-address">
+                  {connectedWallet.address.slice(0, 6)}...{connectedWallet.address.slice(-4)}
+                </code>
+                <Badge variant="outline" className="text-xs">
+                  {connectedWallet.name}
+                </Badge>
+              </div>
+            ) : (
+              <Button 
+                className="hidden sm:flex items-center gap-2"
+                data-testid="button-connect-wallet"
+                onClick={() => setWalletModalOpen(true)}
+              >
+                <Wallet className="w-4 h-4" />
+                Connect Wallet
+              </Button>
+            )}
             <Button
               variant="ghost"
               size="icon"
@@ -75,44 +99,52 @@ export function Navbar() {
       {mobileMenuOpen && (
         <div className="md:hidden border-t">
           <div className="px-4 py-4 space-y-3">
-            <a 
-              href="#markets" 
-              className="block text-sm font-medium hover:text-primary transition-colors py-2"
+            <Link 
+              href="/" 
+              className={`block text-sm font-medium hover:text-primary transition-colors py-2 ${isActive('/') ? 'text-primary' : ''}`}
               onClick={() => setMobileMenuOpen(false)}
             >
-              Active Markets
-            </a>
-            <a 
-              href="#how-it-works" 
-              className="block text-sm font-medium hover:text-primary transition-colors py-2"
+              Markets
+            </Link>
+            <Link 
+              href="/create" 
+              className={`block text-sm font-medium hover:text-primary transition-colors py-2 ${isActive('/create') ? 'text-primary' : ''}`}
               onClick={() => setMobileMenuOpen(false)}
             >
-              How It Works
-            </a>
-            <a 
-              href="#tokenomics" 
-              className="block text-sm font-medium hover:text-primary transition-colors py-2"
+              Create
+            </Link>
+            <Link 
+              href="/leaderboard" 
+              className={`block text-sm font-medium hover:text-primary transition-colors py-2 ${isActive('/leaderboard') ? 'text-primary' : ''}`}
               onClick={() => setMobileMenuOpen(false)}
             >
-              Tokenomics
-            </a>
-            <a 
-              href="#docs" 
-              className="block text-sm font-medium hover:text-primary transition-colors py-2"
+              Leaderboard
+            </Link>
+            <Link 
+              href="/faq" 
+              className={`block text-sm font-medium hover:text-primary transition-colors py-2 ${isActive('/faq') ? 'text-primary' : ''}`}
               onClick={() => setMobileMenuOpen(false)}
             >
-              Docs
-            </a>
-            <Button 
-              className="w-full flex items-center justify-center gap-2 sm:hidden"
-              onClick={() => console.log('Connect wallet clicked')}
-            >
-              <Wallet className="w-4 h-4" />
-              Connect Wallet
-            </Button>
+              FAQ
+            </Link>
+            {!connectedWallet && (
+              <Button 
+                className="w-full flex items-center justify-center gap-2 sm:hidden"
+                onClick={() => setWalletModalOpen(true)}
+              >
+                <Wallet className="w-4 h-4" />
+                Connect Wallet
+              </Button>
+            )}
           </div>
         </div>
       )}
+      
+      <WalletConnectionModal
+        open={walletModalOpen}
+        onOpenChange={setWalletModalOpen}
+        onConnect={handleWalletConnect}
+      />
     </nav>
   );
 }

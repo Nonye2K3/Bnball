@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Link } from "wouter";
 import { Github, Twitter, MessageCircle, FileText } from "lucide-react";
 import logoImage from "@assets/generated_images/BNBall_logo_design_5d68f7d3.png";
 
@@ -32,10 +33,10 @@ export function Footer() {
           <div>
             <h4 className="font-semibold mb-4">Product</h4>
             <ul className="space-y-2 text-sm">
-              <li><a href="#markets" className="text-muted-foreground hover:text-foreground transition-colors">Active Markets</a></li>
-              <li><a href="#how-it-works" className="text-muted-foreground hover:text-foreground transition-colors">How It Works</a></li>
-              <li><a href="#tokenomics" className="text-muted-foreground hover:text-foreground transition-colors">Tokenomics</a></li>
-              <li><a href="#" className="text-muted-foreground hover:text-foreground transition-colors">Leaderboard</a></li>
+              <li><Link href="/" className="text-muted-foreground hover:text-foreground transition-colors">Markets</Link></li>
+              <li><Link href="/create" className="text-muted-foreground hover:text-foreground transition-colors">Create Market</Link></li>
+              <li><Link href="/leaderboard" className="text-muted-foreground hover:text-foreground transition-colors">Leaderboard</Link></li>
+              <li><Link href="/faq" className="text-muted-foreground hover:text-foreground transition-colors">FAQ</Link></li>
             </ul>
           </div>
           

@@ -1,0 +1,264 @@
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+import { Clock, Users, TrendingUp, Info, AlertCircle } from "lucide-react";
+import { formatDistanceToNow } from "date-fns";
+import { useState } from "react";
+import { useToast } from "@/hooks/use-toast";
+
+interface MarketDetailsModalProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  market: {
+    id: string;
+    title: string;
+    category: string;
+    status: "live" | "upcoming" | "completed";
+    deadline: Date;
+    yesOdds: number;
+    noOdds: number;
+    totalPool: string;
+    participants: number;
+    resolutionMethod?: string;
+    result?: string;
+    description?: string;
+  };
+}
+
+export function MarketDetailsModal({ open, onOpenChange, market }: MarketDetailsModalProps) {
+  const [betAmount, setBetAmount] = useState("");
+  const [selectedOption, setSelectedOption] = useState<"yes" | "no">("yes");
+  const { toast } = useToast();
+
+  const calculatePotentialReturn = () => {
+    if (!betAmount || isNaN(parseFloat(betAmount))) return "0.00";
+    const amount = parseFloat(betAmount);
+    const odds = selectedOption === "yes" ? market.yesOdds : market.noOdds;
+    const multiplier = 100 / odds;
+    return (amount * multiplier).toFixed(3);
+  };
+
+  const handlePlaceBet = () => {
+    toast({
+      title: "Bet Placed! (Demo)",
+      description: `Simulated ${betAmount} BNB on ${selectedOption.toUpperCase()}. In production, this would trigger a smart contract transaction.`,
+    });
+    setBetAmount("");
+    onOpenChange(false);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <div className="flex items-center gap-2 mb-2">
+            <Badge variant="outline" className="text-xs">
+              {market.category}
+            </Badge>
+            <Badge 
+              className={
+                market.status === "live" 
+                  ? "bg-green-500/10 text-green-500 border-green-500/20"
+                  : market.status === "upcoming"
+                  ? "bg-blue-500/10 text-blue-500 border-blue-500/20"
+                  : "bg-muted text-muted-foreground"
+              }
+            >
+              {market.status.toUpperCase()}
+            </Badge>
+          </div>
+          <DialogTitle className="text-xl" data-testid="text-modal-title">
+            {market.title}
+          </DialogTitle>
+          <DialogDescription>
+            {market.description || "Place your prediction and compete with other traders"}
+          </DialogDescription>
+        </DialogHeader>
+
+        <Tabs defaultValue="bet" className="w-full">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="bet" data-testid="tab-place-bet">Place Bet</TabsTrigger>
+            <TabsTrigger value="details" data-testid="tab-details">Details</TabsTrigger>
+            <TabsTrigger value="activity" data-testid="tab-activity">Activity</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="bet" className="space-y-4 mt-4">
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                onClick={() => setSelectedOption("yes")}
+                className={`p-4 rounded-lg border-2 transition-all ${
+                  selectedOption === "yes"
+                    ? "border-green-500 bg-green-500/10"
+                    : "border-border hover:border-green-500/50"
+                }`}
+                data-testid="button-select-yes"
+              >
+                <div className="text-xs text-muted-foreground mb-1">YES</div>
+                <div className="text-2xl font-mono font-bold text-green-500">
+                  {market.yesOdds.toFixed(1)}%
+                </div>
+                <div className="text-xs text-muted-foreground mt-1">
+                  +{(100 / market.yesOdds * 100 - 100).toFixed(0)}% return
+                </div>
+              </button>
+              <button
+                onClick={() => setSelectedOption("no")}
+                className={`p-4 rounded-lg border-2 transition-all ${
+                  selectedOption === "no"
+                    ? "border-red-500 bg-red-500/10"
+                    : "border-border hover:border-red-500/50"
+                }`}
+                data-testid="button-select-no"
+              >
+                <div className="text-xs text-muted-foreground mb-1">NO</div>
+                <div className="text-2xl font-mono font-bold text-red-500">
+                  {market.noOdds.toFixed(1)}%
+                </div>
+                <div className="text-xs text-muted-foreground mt-1">
+                  +{(100 / market.noOdds * 100 - 100).toFixed(0)}% return
+                </div>
+              </button>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="bet-amount">Bet Amount (BNB)</Label>
+              <Input
+                id="bet-amount"
+                type="number"
+                step="0.001"
+                placeholder="0.000"
+                value={betAmount}
+                onChange={(e) => setBetAmount(e.target.value)}
+                data-testid="input-bet-amount"
+              />
+            </div>
+
+            <div className="bg-muted/50 p-4 rounded-lg space-y-2">
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Your Prediction</span>
+                <span className="font-semibold">{selectedOption.toUpperCase()}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Potential Return</span>
+                <span className="font-mono font-semibold" data-testid="text-potential-return">
+                  {calculatePotentialReturn()} BNB
+                </span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Current Odds</span>
+                <span className="font-mono">
+                  {selectedOption === "yes" ? market.yesOdds : market.noOdds}%
+                </span>
+              </div>
+            </div>
+
+            <div className="flex items-start gap-2 p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+              <Info className="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" />
+              <p className="text-xs text-muted-foreground">
+                This is a demo simulation. In production, clicking "Place Bet" would create a blockchain transaction requiring wallet confirmation.
+              </p>
+            </div>
+
+            <Button 
+              className="w-full" 
+              size="lg"
+              disabled={!betAmount || parseFloat(betAmount) <= 0 || market.status !== "live"}
+              onClick={handlePlaceBet}
+              data-testid="button-confirm-bet"
+            >
+              {market.status === "live" ? "Place Bet (Demo)" : "Market Not Active"}
+            </Button>
+          </TabsContent>
+
+          <TabsContent value="details" className="space-y-4 mt-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <div className="text-xs text-muted-foreground mb-1">Total Pool</div>
+                <div className="flex items-center gap-2">
+                  <TrendingUp className="w-4 h-4 text-primary" />
+                  <span className="font-mono font-semibold text-lg">{market.totalPool} BNB</span>
+                </div>
+              </div>
+              <div>
+                <div className="text-xs text-muted-foreground mb-1">Participants</div>
+                <div className="flex items-center gap-2">
+                  <Users className="w-4 h-4 text-primary" />
+                  <span className="font-semibold text-lg">{market.participants}</span>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <div className="text-xs text-muted-foreground mb-1">Deadline</div>
+              <div className="flex items-center gap-2">
+                <Clock className="w-4 h-4 text-primary" />
+                <span className="text-sm">
+                  {market.status === "completed" 
+                    ? "Ended" 
+                    : formatDistanceToNow(market.deadline, { addSuffix: true })}
+                </span>
+              </div>
+            </div>
+
+            <div>
+              <div className="text-xs text-muted-foreground mb-1">Resolution Method</div>
+              <p className="text-sm">{market.resolutionMethod || "Chainlink Oracle + AI Verification"}</p>
+            </div>
+
+            {market.result && (
+              <div className="p-4 bg-muted/50 rounded-lg border">
+                <div className="text-xs font-semibold text-muted-foreground mb-2">FINAL RESULT</div>
+                <p className="text-sm">{market.result}</p>
+              </div>
+            )}
+
+            <div className="flex items-start gap-2 p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg">
+              <AlertCircle className="w-4 h-4 text-amber-500 mt-0.5 flex-shrink-0" />
+              <p className="text-xs text-muted-foreground">
+                All bets are final once placed. Markets are resolved automatically using verified oracle data. 
+                Dispute resolution is available through community governance.
+              </p>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="activity" className="space-y-3 mt-4">
+            <div className="text-sm text-muted-foreground mb-4">
+              Recent betting activity (demo data)
+            </div>
+            {[
+              { user: "0x7a2b...3d4e", prediction: "YES", amount: "2.5 BNB", time: "2 min ago" },
+              { user: "0x9f1c...8b2a", prediction: "NO", amount: "1.8 BNB", time: "5 min ago" },
+              { user: "0x3e4f...1c9d", prediction: "YES", amount: "4.2 BNB", time: "12 min ago" },
+              { user: "0x6d8a...7f3b", prediction: "NO", amount: "0.9 BNB", time: "18 min ago" },
+            ].map((activity, i) => (
+              <div key={i} className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
+                <div className="flex items-center gap-3">
+                  <code className="text-xs font-mono">{activity.user}</code>
+                  <Badge 
+                    variant="outline" 
+                    className={activity.prediction === "YES" ? "text-green-500" : "text-red-500"}
+                  >
+                    {activity.prediction}
+                  </Badge>
+                </div>
+                <div className="text-right">
+                  <div className="text-sm font-mono font-semibold">{activity.amount}</div>
+                  <div className="text-xs text-muted-foreground">{activity.time}</div>
+                </div>
+              </div>
+            ))}
+          </TabsContent>
+        </Tabs>
+      </DialogContent>
+    </Dialog>
+  );
+}

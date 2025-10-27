@@ -2,12 +2,12 @@ import { Badge } from "@/components/ui/badge";
 import { useState } from "react";
 
 const categories = [
-  { id: "all", label: "All Sports", icon: "🏆" },
-  { id: "nba", label: "NBA", icon: "🏀" },
-  { id: "fifa", label: "FIFA", icon: "⚽" },
-  { id: "nfl", label: "NFL", icon: "🏈" },
-  { id: "esports", label: "E-Sports", icon: "🎮" },
-  { id: "boxing", label: "Boxing", icon: "🥊" },
+  { id: "all", label: "All Sports" },
+  { id: "nba", label: "NBA" },
+  { id: "fifa", label: "FIFA" },
+  { id: "nfl", label: "NFL" },
+  { id: "esports", label: "E-Sports" },
+  { id: "boxing", label: "Boxing" },
 ];
 
 interface CategoryFilterProps {
@@ -35,7 +35,6 @@ export function CategoryFilter({ onCategoryChange }: CategoryFilterProps) {
           onClick={() => handleSelect(category.id)}
           data-testid={`filter-${category.id}`}
         >
-          <span className="mr-2">{category.icon}</span>
           {category.label}
         </Badge>
       ))}

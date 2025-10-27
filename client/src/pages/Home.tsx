@@ -8,6 +8,7 @@ import { OracleResolution } from "@/components/OracleResolution";
 import { Tokenomics } from "@/components/Tokenomics";
 import { EscrowVault } from "@/components/EscrowVault";
 import { Footer } from "@/components/Footer";
+import { MarketDetailsModal } from "@/components/MarketDetailsModal";
 import { useState } from "react";
 
 // Mock data for demonstration
@@ -89,6 +90,7 @@ const mockMarkets = [
 
 export default function Home() {
   const [selectedCategory, setSelectedCategory] = useState("all");
+  const [selectedMarket, setSelectedMarket] = useState<typeof mockMarkets[0] | null>(null);
 
   const filteredMarkets = selectedCategory === "all" 
     ? mockMarkets 
@@ -114,9 +116,19 @@ export default function Home() {
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
             {filteredMarkets.map((market) => (
-              <PredictionCard key={market.id} {...market} />
+              <div key={market.id} onClick={() => setSelectedMarket(market)} className="cursor-pointer">
+                <PredictionCard {...market} />
+              </div>
             ))}
           </div>
+          
+          {selectedMarket && (
+            <MarketDetailsModal
+              open={!!selectedMarket}
+              onOpenChange={(open) => !open && setSelectedMarket(null)}
+              market={selectedMarket}
+            />
+          )}
           
           <div className="max-w-md mx-auto">
             <EscrowVault />
