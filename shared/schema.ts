@@ -83,14 +83,60 @@ export const insertPredictionMarketSchema = createInsertSchema(predictionMarkets
   id: true,
 });
 
+// Enhanced validation for bets with security checks
 export const insertBetSchema = createInsertSchema(bets).omit({
   id: true,
   timestamp: true,
+}).extend({
+  userAddress: z.string()
+    .regex(/^0x[a-fA-F0-9]{40}$/, "Invalid wallet address format"),
+  amount: z.string()
+    .regex(/^\d+$/, "Amount must be a valid BigInt string")
+    .refine((val) => {
+      try {
+        return BigInt(val) > BigInt(0);
+      } catch {
+        return false;
+      }
+    }, "Amount must be greater than zero"),
+  transactionHash: z.string()
+    .regex(/^0x[a-fA-F0-9]{64}$/, "Invalid transaction hash format"),
+  chainId: z.number()
+    .int()
+    .positive()
+    .refine((val) => val === 56 || val === 97, "Chain ID must be BSC mainnet (56) or testnet (97)"),
+  prediction: z.enum(["yes", "no"], {
+    errorMap: () => ({ message: "Prediction must be either 'yes' or 'no'" })
+  }),
+  marketId: z.string().uuid("Invalid market ID format")
 });
 
+// Enhanced validation for transactions with security checks
 export const insertTransactionSchema = createInsertSchema(transactions).omit({
   id: true,
   timestamp: true,
+}).extend({
+  userAddress: z.string()
+    .regex(/^0x[a-fA-F0-9]{40}$/, "Invalid wallet address format"),
+  transactionHash: z.string()
+    .regex(/^0x[a-fA-F0-9]{64}$/, "Invalid transaction hash format"),
+  chainId: z.number()
+    .int()
+    .positive()
+    .refine((val) => val === 56 || val === 97, "Chain ID must be BSC mainnet (56) or testnet (97)"),
+  value: z.string()
+    .regex(/^\d+$/, "Value must be a valid BigInt string")
+    .refine((val) => {
+      try {
+        return BigInt(val) > BigInt(0);
+      } catch {
+        return false;
+      }
+    }, "Value must be greater than zero"),
+  type: z.string().min(1, "Transaction type is required"),
+  status: z.enum(["pending", "confirmed", "failed"], {
+    errorMap: () => ({ message: "Status must be 'pending', 'confirmed', or 'failed'" })
+  })
 });
 
 export type InsertUser = z.infer<typeof insertUserSchema>;

@@ -88,7 +88,7 @@ export function Hero() {
             variants={itemVariants}
             className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 backdrop-blur-sm mb-8"
           >
-            <Zap className="w-4 h-4 text-primary" />
+            <Zap className="w-4 h-4 text-primary icon-3d" />
             <span className="text-sm font-semibold text-primary">First Sports Prediction Market on Binance Chain</span>
           </motion.div>
           
@@ -150,7 +150,7 @@ export function Hero() {
             animate="visible"
             className="flex flex-col items-center gap-3 p-6 rounded-xl bg-background/10 backdrop-blur-sm border border-white/10"
           >
-            <Shield className="w-8 h-8 text-primary" />
+            <Shield className="w-8 h-8 text-primary icon-3d" />
             <h3 className="font-semibold text-lg text-white">100% On-Chain</h3>
             <p className="text-sm text-white/70">Transparent, verifiable, trustless</p>
           </motion.div>
@@ -161,7 +161,7 @@ export function Hero() {
             animate="visible"
             className="flex flex-col items-center gap-3 p-6 rounded-xl bg-background/10 backdrop-blur-sm border border-white/10"
           >
-            <TrendingUp className="w-8 h-8 text-primary" />
+            <TrendingUp className="w-8 h-8 text-primary icon-3d" />
             <h3 className="font-semibold text-lg text-white">AI-Powered Results</h3>
             <p className="text-sm text-white/70">Automated, accurate settlements</p>
           </motion.div>
@@ -172,7 +172,7 @@ export function Hero() {
             animate="visible"
             className="flex flex-col items-center gap-3 p-6 rounded-xl bg-background/10 backdrop-blur-sm border border-white/10"
           >
-            <Zap className="w-8 h-8 text-primary" />
+            <Zap className="w-8 h-8 text-primary icon-3d" />
             <h3 className="font-semibold text-lg text-white">Instant Payouts</h3>
             <p className="text-sm text-white/70">Get your winnings immediately</p>
           </motion.div>

@@ -3,51 +3,145 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertBetSchema, insertTransactionSchema, insertPredictionMarketSchema } from "@shared/schema";
 import { z } from "zod";
+import { verifyWalletAddress, requireWalletOwnership } from "./middleware";
+import { 
+  verifyTransactionExists, 
+  verifyTransactionSender, 
+  verifyTransactionValue,
+  logSecurityEvent 
+} from "./blockchain";
 
 // Logging utility
 function logRequest(method: string, path: string, data?: any) {
   console.log(`[${new Date().toISOString()}] ${method} ${path}`, data ? JSON.stringify(data) : '');
 }
 
+// Generic error handler that hides internal details
+function handleError(res: Response, error: any, operation: string, statusCode: number = 500) {
+  // Log the full error for debugging
+  console.error(`Error in ${operation}:`, error);
+  
+  // Return generic error message to client
+  if (error instanceof z.ZodError) {
+    logSecurityEvent('VALIDATION_FAILED', {
+      operation,
+      errors: error.errors
+    });
+    return res.status(400).json({ 
+      error: "Validation failed",
+      details: error.errors.map(e => ({
+        field: e.path.join('.'),
+        message: e.message
+      }))
+    });
+  }
+  
+  // Don't expose internal error details
+  return res.status(statusCode).json({ 
+    error: `Failed to ${operation}`,
+    message: "An error occurred. Please try again later."
+  });
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   
   // POST /api/bets - Create new bet record after blockchain transaction
-  app.post("/api/bets", async (req: Request, res: Response) => {
+  app.post("/api/bets", verifyWalletAddress, requireWalletOwnership, async (req: Request, res: Response) => {
     try {
       logRequest('POST', '/api/bets', req.body);
       
-      // Validate request body
+      // Validate request body with enhanced schema
       const validatedData = insertBetSchema.parse(req.body);
       
-      // Check for duplicate transaction hash to prevent race conditions
+      // Step 1: Check for duplicate transaction hash to prevent race conditions
       const existingBet = await storage.getBetByTransactionHash(validatedData.transactionHash);
       if (existingBet) {
-        logRequest('POST', '/api/bets', { error: 'Duplicate transaction hash', txHash: validatedData.transactionHash });
+        logSecurityEvent('DUPLICATE_BET_TRANSACTION', {
+          txHash: validatedData.transactionHash,
+          existingBetId: existingBet.id
+        });
         return res.status(409).json({ 
           error: "Bet with this transaction hash already exists",
           betId: existingBet.id 
         });
       }
       
-      // Create bet
+      // Step 2: Verify market exists
+      const market = await storage.getPredictionMarket(validatedData.marketId);
+      if (!market) {
+        logSecurityEvent('INVALID_MARKET_ID', {
+          marketId: validatedData.marketId,
+          userAddress: validatedData.userAddress
+        });
+        return res.status(404).json({ 
+          error: "Market not found",
+          message: "The specified market does not exist"
+        });
+      }
+      
+      // Step 3: Verify transaction exists on blockchain
+      const { exists, receipt } = await verifyTransactionExists(
+        validatedData.transactionHash as `0x${string}`,
+        validatedData.chainId
+      );
+      
+      if (!exists) {
+        logSecurityEvent('TRANSACTION_NOT_FOUND', {
+          txHash: validatedData.transactionHash,
+          chainId: validatedData.chainId,
+          userAddress: validatedData.userAddress
+        });
+        return res.status(400).json({ 
+          error: "Invalid transaction",
+          message: "Transaction not found on blockchain or failed"
+        });
+      }
+      
+      // Step 4: Verify transaction sender matches user address
+      const { valid: validSender, actualSender } = await verifyTransactionSender(
+        validatedData.transactionHash as `0x${string}`,
+        validatedData.chainId,
+        validatedData.userAddress as `0x${string}`
+      );
+      
+      if (!validSender) {
+        logSecurityEvent('SENDER_VERIFICATION_FAILED', {
+          txHash: validatedData.transactionHash,
+          expectedSender: validatedData.userAddress,
+          actualSender
+        });
+        return res.status(403).json({ 
+          error: "Unauthorized transaction",
+          message: "Transaction sender does not match your wallet address"
+        });
+      }
+      
+      // Step 5: Verify transaction value matches bet amount
+      const { valid: validValue, actualValue } = await verifyTransactionValue(
+        validatedData.transactionHash as `0x${string}`,
+        validatedData.chainId,
+        validatedData.amount
+      );
+      
+      if (!validValue) {
+        logSecurityEvent('VALUE_VERIFICATION_FAILED', {
+          txHash: validatedData.transactionHash,
+          expectedValue: validatedData.amount,
+          actualValue
+        });
+        return res.status(400).json({ 
+          error: "Amount mismatch",
+          message: "Transaction amount does not match your bet amount"
+        });
+      }
+      
+      // All validations passed - create bet
       const bet = await storage.createBet(validatedData);
       logRequest('POST', '/api/bets', { success: true, betId: bet.id });
       
       return res.status(201).json(bet);
     } catch (error) {
-      if (error instanceof z.ZodError) {
-        logRequest('POST', '/api/bets', { error: 'Validation error', details: error.errors });
-        return res.status(400).json({ 
-          error: "Validation failed", 
-          details: error.errors 
-        });
-      }
-      
-      console.error('Error creating bet:', error);
-      return res.status(500).json({ 
-        error: "Failed to create bet",
-        message: error instanceof Error ? error.message : 'Unknown error'
-      });
+      return handleError(res, error, 'create bet');
     }
   });
 
@@ -58,7 +152,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       logRequest('GET', `/api/bets/${userAddress}`);
       
       // Validate address format (basic validation)
-      if (!userAddress || !userAddress.startsWith('0x')) {
+      if (!userAddress || !userAddress.match(/^0x[a-fA-F0-9]{40}$/)) {
         return res.status(400).json({ 
           error: "Invalid wallet address format" 
         });
@@ -67,11 +161,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const bets = await storage.getBetsByUser(userAddress);
       return res.json(bets);
     } catch (error) {
-      console.error('Error fetching user bets:', error);
-      return res.status(500).json({ 
-        error: "Failed to fetch bets",
-        message: error instanceof Error ? error.message : 'Unknown error'
-      });
+      return handleError(res, error, 'fetch bets');
     }
   });
 
@@ -86,6 +176,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!claimTransactionHash) {
         return res.status(400).json({ 
           error: "claimTransactionHash is required" 
+        });
+      }
+      
+      // Validate transaction hash format
+      if (!claimTransactionHash.match(/^0x[a-fA-F0-9]{64}$/)) {
+        return res.status(400).json({ 
+          error: "Invalid transaction hash format" 
         });
       }
       
@@ -120,51 +217,74 @@ export async function registerRoutes(app: Express): Promise<Server> {
       logRequest('PATCH', `/api/bets/${id}/claim`, { success: true });
       return res.json(updatedBet);
     } catch (error) {
-      console.error('Error claiming bet:', error);
-      return res.status(500).json({ 
-        error: "Failed to claim bet",
-        message: error instanceof Error ? error.message : 'Unknown error'
-      });
+      return handleError(res, error, 'claim bet');
     }
   });
 
   // POST /api/transactions - Record transaction
-  app.post("/api/transactions", async (req: Request, res: Response) => {
+  app.post("/api/transactions", verifyWalletAddress, requireWalletOwnership, async (req: Request, res: Response) => {
     try {
       logRequest('POST', '/api/transactions', req.body);
       
-      // Validate request body
+      // Validate request body with enhanced schema
       const validatedData = insertTransactionSchema.parse(req.body);
       
-      // Check for duplicate transaction hash to prevent race conditions
+      // Step 1: Check for duplicate transaction hash to prevent race conditions
       const existingTx = await storage.getTransactionByHash(validatedData.transactionHash);
       if (existingTx) {
-        logRequest('POST', '/api/transactions', { error: 'Duplicate transaction hash', txHash: validatedData.transactionHash });
+        logSecurityEvent('DUPLICATE_TRANSACTION', {
+          txHash: validatedData.transactionHash,
+          existingTxId: existingTx.id
+        });
         return res.status(409).json({ 
           error: "Transaction with this hash already exists",
           transactionId: existingTx.id 
         });
       }
       
-      // Create transaction
+      // Step 2: Verify transaction exists on blockchain
+      const { exists } = await verifyTransactionExists(
+        validatedData.transactionHash as `0x${string}`,
+        validatedData.chainId
+      );
+      
+      if (!exists) {
+        logSecurityEvent('TRANSACTION_NOT_FOUND', {
+          txHash: validatedData.transactionHash,
+          chainId: validatedData.chainId,
+          userAddress: validatedData.userAddress
+        });
+        return res.status(400).json({ 
+          error: "Invalid transaction",
+          message: "Transaction not found on blockchain or failed"
+        });
+      }
+      
+      // Step 3: Verify transaction sender matches user address
+      const { valid: validSender } = await verifyTransactionSender(
+        validatedData.transactionHash as `0x${string}`,
+        validatedData.chainId,
+        validatedData.userAddress as `0x${string}`
+      );
+      
+      if (!validSender) {
+        logSecurityEvent('SENDER_VERIFICATION_FAILED', {
+          txHash: validatedData.transactionHash,
+          expectedSender: validatedData.userAddress
+        });
+        return res.status(403).json({ 
+          error: "Unauthorized transaction",
+          message: "Transaction sender does not match your wallet address"
+        });
+      }
+      
+      // All validations passed - create transaction record
       const transaction = await storage.createTransaction(validatedData);
       logRequest('POST', '/api/transactions', { success: true, txId: transaction.id });
       
       return res.status(201).json(transaction);
     } catch (error) {
-      if (error instanceof z.ZodError) {
-        logRequest('POST', '/api/transactions', { error: 'Validation error', details: error.errors });
-        return res.status(400).json({ 
-          error: "Validation failed", 
-          details: error.errors 
-        });
-      }
-      
-      console.error('Error creating transaction:', error);
-      return res.status(500).json({ 
-        error: "Failed to create transaction",
-        message: error instanceof Error ? error.message : 'Unknown error'
-      });
+      return handleError(res, error, 'create transaction');
     }
   });
 
@@ -174,8 +294,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { userAddress } = req.params;
       logRequest('GET', `/api/transactions/${userAddress}`);
       
-      // Validate address format (basic validation)
-      if (!userAddress || !userAddress.startsWith('0x')) {
+      // Validate address format
+      if (!userAddress || !userAddress.match(/^0x[a-fA-F0-9]{40}$/)) {
         return res.status(400).json({ 
           error: "Invalid wallet address format" 
         });
@@ -184,36 +304,78 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const transactions = await storage.getTransactionsByUser(userAddress);
       return res.json(transactions);
     } catch (error) {
-      console.error('Error fetching user transactions:', error);
-      return res.status(500).json({ 
-        error: "Failed to fetch transactions",
-        message: error instanceof Error ? error.message : 'Unknown error'
-      });
+      return handleError(res, error, 'fetch transactions');
     }
   });
 
   // POST /api/markets - Create market with blockchain data
-  app.post("/api/markets", async (req: Request, res: Response) => {
+  app.post("/api/markets", verifyWalletAddress, async (req: Request, res: Response) => {
     try {
       logRequest('POST', '/api/markets', req.body);
       
       // Validate request body
       const validatedData = insertPredictionMarketSchema.parse(req.body);
       
+      // Validate creator address if provided
+      if (validatedData.creatorAddress) {
+        if (!validatedData.creatorAddress.match(/^0x[a-fA-F0-9]{40}$/)) {
+          return res.status(400).json({ 
+            error: "Invalid creator address format" 
+          });
+        }
+      }
+      
       // Check for duplicate transaction hash if provided
       if (validatedData.transactionHash) {
+        // Validate transaction hash format
+        if (!validatedData.transactionHash.match(/^0x[a-fA-F0-9]{64}$/)) {
+          return res.status(400).json({ 
+            error: "Invalid transaction hash format" 
+          });
+        }
+        
         const existingMarkets = await storage.getAllPredictionMarkets();
         const duplicateMarket = existingMarkets.find(
           m => m.transactionHash === validatedData.transactionHash
         );
         
         if (duplicateMarket) {
-          logRequest('POST', '/api/markets', { error: 'Duplicate transaction hash', txHash: validatedData.transactionHash });
+          logSecurityEvent('DUPLICATE_MARKET_TRANSACTION', {
+            txHash: validatedData.transactionHash,
+            existingMarketId: duplicateMarket.id
+          });
           return res.status(409).json({ 
             error: "Market with this transaction hash already exists",
             marketId: duplicateMarket.id 
           });
         }
+        
+        // Verify transaction exists on blockchain if chainId is provided
+        if (validatedData.chainId) {
+          const { exists } = await verifyTransactionExists(
+            validatedData.transactionHash as `0x${string}`,
+            validatedData.chainId
+          );
+          
+          if (!exists) {
+            logSecurityEvent('MARKET_TRANSACTION_NOT_FOUND', {
+              txHash: validatedData.transactionHash,
+              chainId: validatedData.chainId
+            });
+            return res.status(400).json({ 
+              error: "Invalid transaction",
+              message: "Transaction not found on blockchain or failed"
+            });
+          }
+        }
+      }
+      
+      // Validate deadline is in the future
+      if (validatedData.deadline && new Date(validatedData.deadline) < new Date()) {
+        return res.status(400).json({ 
+          error: "Invalid deadline",
+          message: "Market deadline must be in the future"
+        });
       }
       
       // Create market
@@ -222,19 +384,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       return res.status(201).json(market);
     } catch (error) {
-      if (error instanceof z.ZodError) {
-        logRequest('POST', '/api/markets', { error: 'Validation error', details: error.errors });
-        return res.status(400).json({ 
-          error: "Validation failed", 
-          details: error.errors 
-        });
-      }
-      
-      console.error('Error creating market:', error);
-      return res.status(500).json({ 
-        error: "Failed to create market",
-        message: error instanceof Error ? error.message : 'Unknown error'
-      });
+      return handleError(res, error, 'create market');
     }
   });
 
@@ -269,19 +419,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
       logRequest('PATCH', `/api/markets/${id}`, { success: true });
       return res.json(updatedMarket);
     } catch (error) {
-      if (error instanceof z.ZodError) {
-        logRequest('PATCH', `/api/markets/${id}`, { error: 'Validation error', details: error.errors });
-        return res.status(400).json({ 
-          error: "Validation failed", 
-          details: error.errors 
+      return handleError(res, error, 'update market');
+    }
+  });
+
+  // GET /api/markets - Get all markets
+  app.get("/api/markets", async (req: Request, res: Response) => {
+    try {
+      const markets = await storage.getAllPredictionMarkets();
+      return res.json(markets);
+    } catch (error) {
+      return handleError(res, error, 'fetch markets');
+    }
+  });
+
+  // GET /api/markets/:id - Get market by ID
+  app.get("/api/markets/:id", async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      const market = await storage.getPredictionMarket(id);
+      
+      if (!market) {
+        return res.status(404).json({ 
+          error: "Market not found" 
         });
       }
       
-      console.error('Error updating market:', error);
-      return res.status(500).json({ 
-        error: "Failed to update market",
-        message: error instanceof Error ? error.message : 'Unknown error'
-      });
+      return res.json(market);
+    } catch (error) {
+      return handleError(res, error, 'fetch market');
     }
   });
 

@@ -37,7 +37,7 @@ export default function Home() {
             <Link href="/markets">
               <Card className="p-6 hover-elevate active-elevate-2 cursor-pointer h-full">
                 <div className="p-3 rounded-lg bg-primary/10 w-fit mb-4">
-                  <TrendingUp className="w-6 h-6 text-primary" />
+                  <TrendingUp className="w-6 h-6 text-primary icon-3d" />
                 </div>
                 <h3 className="text-xl font-semibold mb-2" data-testid="heading-explore-markets">Explore Markets</h3>
                 <p className="text-sm text-muted-foreground">
@@ -49,7 +49,7 @@ export default function Home() {
             <Link href="/how-it-works">
               <Card className="p-6 hover-elevate active-elevate-2 cursor-pointer h-full">
                 <div className="p-3 rounded-lg bg-primary/10 w-fit mb-4">
-                  <Brain className="w-6 h-6 text-primary" />
+                  <Brain className="w-6 h-6 text-primary icon-3d" />
                 </div>
                 <h3 className="text-xl font-semibold mb-2" data-testid="heading-how-it-works">How It Works</h3>
                 <p className="text-sm text-muted-foreground">
@@ -61,7 +61,7 @@ export default function Home() {
             <Link href="/oracle">
               <Card className="p-6 hover-elevate active-elevate-2 cursor-pointer h-full">
                 <div className="p-3 rounded-lg bg-primary/10 w-fit mb-4">
-                  <Shield className="w-6 h-6 text-primary" />
+                  <Shield className="w-6 h-6 text-primary icon-3d" />
                 </div>
                 <h3 className="text-xl font-semibold mb-2" data-testid="heading-oracle-system">Oracle System</h3>
                 <p className="text-sm text-muted-foreground">
@@ -73,7 +73,7 @@ export default function Home() {
             <Link href="/tokenomics">
               <Card className="p-6 hover-elevate active-elevate-2 cursor-pointer h-full">
                 <div className="p-3 rounded-lg bg-primary/10 w-fit mb-4">
-                  <Coins className="w-6 h-6 text-primary" />
+                  <Coins className="w-6 h-6 text-primary icon-3d" />
                 </div>
                 <h3 className="text-xl font-semibold mb-2" data-testid="heading-tokenomics">Tokenomics</h3>
                 <p className="text-sm text-muted-foreground">

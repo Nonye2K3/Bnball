@@ -94,28 +94,28 @@ export default function HowItWorks() {
             <Step
               index={0}
               number={1}
-              icon={<Wallet className="w-6 h-6 text-primary" />}
+              icon={<Wallet className="w-6 h-6 text-primary icon-3d" />}
               title="Connect Wallet"
               description="Link your Web3 wallet using WalletConnect. Support for MetaMask, Trust Wallet, and more."
             />
             <Step
               index={1}
               number={2}
-              icon={<TrendingUp className="w-6 h-6 text-primary" />}
+              icon={<TrendingUp className="w-6 h-6 text-primary icon-3d" />}
               title="Choose Market"
               description="Browse sports predictions for NBA, FIFA, eSports, and more. Review odds and potential returns."
             />
             <Step
               index={2}
               number={3}
-              icon={<Shield className="w-6 h-6 text-primary" />}
+              icon={<Shield className="w-6 h-6 text-primary icon-3d" />}
               title="Place Your Bet"
               description="Stake BNB or BNBALL tokens. All funds secured in smart contract escrow vault."
             />
             <Step
               index={3}
               number={4}
-              icon={<Trophy className="w-6 h-6 text-primary" />}
+              icon={<Trophy className="w-6 h-6 text-primary icon-3d" />}
               title="Collect Winnings"
               description="AI-powered oracle verifies results. Winners receive instant payouts to their wallet."
             />

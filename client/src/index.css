@@ -90,6 +90,17 @@
   --shadow-2xl: 0px 25px 50px 0px hsl(210 12% 16% / 0.15);
   --tracking-normal: 0em;
   --spacing: 0.25rem;
+  
+  /* 3D Effect Variables */
+  --shadow-3d: 0 4px 6px -1px rgba(0, 0, 0, 0.15), 
+               0 2px 4px -1px rgba(0, 0, 0, 0.08),
+               0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  --shadow-3d-hover: 0 6px 8px -2px rgba(0, 0, 0, 0.2), 
+                     0 3px 6px -2px rgba(0, 0, 0, 0.12),
+                     0 15px 20px -5px rgba(0, 0, 0, 0.15);
+  --shadow-3d-active: 0 2px 3px -1px rgba(0, 0, 0, 0.15), 
+                      0 1px 2px -1px rgba(0, 0, 0, 0.08),
+                      0 5px 10px -3px rgba(0, 0, 0, 0.1);
 
   /* Automatically computed borders - intensity can be controlled by the user by the --opaque-button-border-intensity setting */
 
@@ -324,5 +335,39 @@
   .border.active-elevate-2:not(.no-active-interaction-elevate)::after,
   .border.hover-elevate:not(.no-hover-interaction-elevate)::after {
     inset: -1px;
+  }
+}
+
+/* 3D Icon Styles */
+@layer utilities {
+  .icon-3d {
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.15)) 
+            drop-shadow(0 4px 8px rgba(0, 0, 0, 0.1));
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  .icon-3d:hover {
+    filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.2)) 
+            drop-shadow(0 6px 12px rgba(0, 0, 0, 0.15));
+    transform: translateY(-2px);
+  }
+  
+  .icon-3d:active {
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.15)) 
+            drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+    transform: translateY(0);
+  }
+}
+
+/* Static depth effect for cards/containers - does not interfere with hover/active */
+@layer components {
+  .btn-depth {
+    box-shadow: 0 2px 0 0 rgba(0, 0, 0, 0.1),
+                inset 0 1px 0 0 rgba(255, 255, 255, 0.1);
+  }
+  
+  .dark .btn-depth {
+    box-shadow: 0 2px 0 0 rgba(0, 0, 0, 0.2),
+                inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
   }
 }

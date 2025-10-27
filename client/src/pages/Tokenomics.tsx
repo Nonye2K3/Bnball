@@ -218,7 +218,7 @@ export default function Tokenomics() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
             <TokenCard
               index={0}
-              icon={<Coins className="w-6 h-6 text-primary" />}
+              icon={<Coins className="w-6 h-6 text-primary icon-3d" />}
               title="BNB Token"
               description="Primary betting currency with instant liquidity and wide acceptance across BSC ecosystem."
               features={[

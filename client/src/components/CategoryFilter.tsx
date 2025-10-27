@@ -30,7 +30,7 @@ export function CategoryFilter({ onCategoryChange }: CategoryFilterProps) {
           key={category.id}
           variant={selected === category.id ? "default" : "outline"}
           className={`cursor-pointer whitespace-nowrap px-4 py-2 text-sm transition-all ${
-            selected === category.id ? "toggle-elevate toggle-elevated" : "hover-elevate"
+            selected === category.id ? "toggle-elevate toggle-elevated" : ""
           }`}
           onClick={() => handleSelect(category.id)}
           data-testid={`filter-${category.id}`}

@@ -153,7 +153,7 @@ export function PredictionCard({
               whileTap={{ scale: 0.95 }}
             >
               <Button 
-                size="sm" 
+                size="sm"
                 data-testid="button-place-bet"
                 onClick={(e) => {
                   e.stopPropagation();

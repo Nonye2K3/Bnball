@@ -1,8 +1,66 @@
 import express, { type Request, Response, NextFunction } from "express";
+import cors from "cors";
+import rateLimit from "express-rate-limit";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 
 const app = express();
+
+// CORS configuration - allow requests from frontend domain
+// In development with Vite serving on same origin, CORS is already handled by Vite proxy
+// Only apply CORS restrictions in production
+if (process.env.NODE_ENV === 'production') {
+  const corsOptions = {
+    origin: function (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) {
+      // Allow requests with no origin (like mobile apps)
+      if (!origin) return callback(null, true);
+      
+      const allowedOrigins = [process.env.FRONTEND_URL || 'https://bnball.app'];
+      
+      if (allowedOrigins.includes(origin) || allowedOrigins.some(allowed => origin.startsWith(allowed))) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
+    credentials: true,
+    optionsSuccessStatus: 200
+  };
+  
+  app.use(cors(corsOptions));
+} else {
+  // In development, allow all origins since Vite handles the routing
+  app.use(cors({
+    origin: true,
+    credentials: true
+  }));
+}
+
+// General API rate limiting - 100 requests per 15 minutes
+const generalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // Limit each IP to 100 requests per window
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: 'Too many requests from this IP, please try again later.',
+  skip: (req) => !req.path.startsWith('/api') // Only apply to API routes
+});
+
+// Strict rate limiting for POST endpoints - 10 requests per hour
+const strictLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 10, // Limit each IP to 10 requests per window
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: 'Too many bet/transaction submissions from this IP, please try again later.',
+  skip: (req) => {
+    // Only apply to bet and transaction POST endpoints
+    return !(req.method === 'POST' && (req.path === '/api/bets' || req.path === '/api/transactions'));
+  }
+});
+
+app.use(generalLimiter);
+app.use(strictLimiter);
 
 declare module 'http' {
   interface IncomingMessage {

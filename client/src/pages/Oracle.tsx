@@ -119,7 +119,7 @@ export default function Oracle() {
           <div className="max-w-3xl mx-auto mb-12">
             <ResolutionMethod
               index={0}
-              icon={<Link2 className="w-6 h-6 text-primary" />}
+              icon={<Link2 className="w-6 h-6 text-primary icon-3d" />}
               title="Chainlink Sports Oracles"
               description="Direct integration with Chainlink's decentralized oracle network for real-time sports data."
               useCase="Major league games with official statistics (NBA, NFL, FIFA)"
@@ -128,7 +128,7 @@ export default function Oracle() {
             <ConnectingArrow index={0} />
             <ResolutionMethod
               index={1}
-              icon={<Brain className="w-6 h-6 text-primary" />}
+              icon={<Brain className="w-6 h-6 text-primary icon-3d" />}
               title="AI-Powered Verification"
               description="Advanced AI models cross-reference multiple data sources to verify outcomes for complex scenarios."
               useCase="E-sports tournaments, niche sports, and multi-condition bets"
@@ -137,7 +137,7 @@ export default function Oracle() {
             <ConnectingArrow index={1} />
             <ResolutionMethod
               index={2}
-              icon={<Users className="w-6 h-6 text-primary" />}
+              icon={<Users className="w-6 h-6 text-primary icon-3d" />}
               title="Community Dispute Resolution"
               description="BNBALL token holders can vote on disputed outcomes through decentralized governance."
               useCase="Edge cases where automated systems disagree or data is unclear"
@@ -146,7 +146,7 @@ export default function Oracle() {
             <ConnectingArrow index={2} />
             <ResolutionMethod
               index={3}
-              icon={<Shield className="w-6 h-6 text-primary" />}
+              icon={<Shield className="w-6 h-6 text-primary icon-3d" />}
               title="Multi-Signature Validation"
               description="Critical markets require validation from multiple independent oracle sources before settlement."
               useCase="High-value predictions and championship events"
