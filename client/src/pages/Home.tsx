@@ -2,6 +2,8 @@ import { Navbar } from "@/components/Navbar";
 import { Hero } from "@/components/Hero";
 import { LiveMarketsPreview } from "@/components/LiveMarketsPreview";
 import { HowItWorksPreview } from "@/components/HowItWorksPreview";
+import { LeaderboardPreview } from "@/components/LeaderboardPreview";
+import { TrustSection } from "@/components/TrustSection";
 import { Footer } from "@/components/Footer";
 import { motion } from "framer-motion";
 
@@ -19,6 +21,8 @@ export default function Home() {
       <Hero />
       <LiveMarketsPreview />
       <HowItWorksPreview />
+      <LeaderboardPreview />
+      <TrustSection />
       <Footer />
     </motion.div>
   );
