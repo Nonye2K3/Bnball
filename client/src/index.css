@@ -98,16 +98,19 @@
   --tracking-normal: 0em;
   --spacing: 0.25rem;
   
-  /* 3D Effect Variables */
-  --shadow-3d: 0 4px 6px -1px rgba(0, 0, 0, 0.15), 
-               0 2px 4px -1px rgba(0, 0, 0, 0.08),
-               0 10px 15px -3px rgba(0, 0, 0, 0.1);
-  --shadow-3d-hover: 0 6px 8px -2px rgba(0, 0, 0, 0.2), 
-                     0 3px 6px -2px rgba(0, 0, 0, 0.12),
-                     0 15px 20px -5px rgba(0, 0, 0, 0.15);
-  --shadow-3d-active: 0 2px 3px -1px rgba(0, 0, 0, 0.15), 
-                      0 1px 2px -1px rgba(0, 0, 0, 0.08),
-                      0 5px 10px -3px rgba(0, 0, 0, 0.1);
+  /* 3D Effect Variables - Enhanced for Gaming Look */
+  --shadow-3d: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 
+               0 2px 4px -1px rgba(0, 0, 0, 0.15),
+               0 10px 15px -3px rgba(0, 0, 0, 0.2),
+               inset 0 2px 0 0 rgba(255, 255, 255, 0.1);
+  --shadow-3d-hover: 0 8px 12px -2px rgba(0, 0, 0, 0.35), 
+                     0 4px 8px -2px rgba(0, 0, 0, 0.2),
+                     0 18px 28px -5px rgba(0, 0, 0, 0.25),
+                     inset 0 2px 0 0 rgba(255, 255, 255, 0.15);
+  --shadow-3d-active: 0 1px 2px -1px rgba(0, 0, 0, 0.2), 
+                      0 1px 2px -1px rgba(0, 0, 0, 0.12),
+                      0 3px 6px -3px rgba(0, 0, 0, 0.15),
+                      inset 0 1px 0 0 rgba(0, 0, 0, 0.1);
 
   /* BNBall Glow Effects for Yellow/Green/Orange */
   --glow-yellow: 0 0 20px rgba(255, 215, 0, 0.3);
@@ -236,10 +239,30 @@
   --shadow-xl: 0px 20px 30px 0px hsl(0 0% 0% / 0.40), 0px 8px 12px -4px hsl(0 0% 0% / 0.45);
   --shadow-2xl: 0px 25px 50px 0px hsl(0 0% 0% / 0.50);
 
-  /* Enhanced glow effects on dark background */
-  --glow-yellow: 0 0 30px rgba(255, 215, 0, 0.5), 0 0 60px rgba(255, 215, 0, 0.2);
-  --glow-green: 0 0 30px rgba(16, 185, 129, 0.5), 0 0 60px rgba(16, 185, 129, 0.2);
-  --glow-orange: 0 0 30px rgba(255, 107, 53, 0.5), 0 0 60px rgba(255, 107, 53, 0.2);
+  /* Enhanced glow effects on dark background - More dramatic for 3D */
+  --glow-yellow: 0 0 20px rgba(255, 215, 0, 0.6), 
+                 0 0 40px rgba(255, 215, 0, 0.3),
+                 0 4px 12px rgba(0, 0, 0, 0.3);
+  --glow-green: 0 0 20px rgba(16, 185, 129, 0.6), 
+                0 0 40px rgba(16, 185, 129, 0.3),
+                0 4px 12px rgba(0, 0, 0, 0.3);
+  --glow-orange: 0 0 20px rgba(255, 107, 53, 0.6), 
+                 0 0 40px rgba(255, 107, 53, 0.3),
+                 0 4px 12px rgba(0, 0, 0, 0.3);
+  
+  /* 3D Shadow variables for dark mode */
+  --shadow-3d: 0 6px 10px -1px rgba(0, 0, 0, 0.5), 
+               0 4px 6px -1px rgba(0, 0, 0, 0.3),
+               0 12px 20px -3px rgba(0, 0, 0, 0.4),
+               inset 0 2px 0 0 rgba(255, 215, 0, 0.15);
+  --shadow-3d-hover: 0 12px 18px -2px rgba(0, 0, 0, 0.6), 
+                     0 6px 10px -2px rgba(0, 0, 0, 0.4),
+                     0 20px 35px -5px rgba(0, 0, 0, 0.5),
+                     inset 0 2px 0 0 rgba(255, 215, 0, 0.2);
+  --shadow-3d-active: 0 2px 4px -1px rgba(0, 0, 0, 0.4), 
+                      0 1px 3px -1px rgba(0, 0, 0, 0.25),
+                      0 4px 8px -3px rgba(0, 0, 0, 0.3),
+                      inset 0 1px 0 0 rgba(0, 0, 0, 0.2);
 }
 
 @layer base {
@@ -380,23 +403,25 @@
   }
 }
 
-/* 3D Icon Styles with Yellow/Green/Orange glow */
+/* 3D Icon Styles with Yellow/Green/Orange glow - Enhanced */
 @layer utilities {
   .icon-3d {
-    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.15)) 
-            drop-shadow(0 4px 8px rgba(0, 0, 0, 0.1));
+    filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.25)) 
+            drop-shadow(0 6px 12px rgba(0, 0, 0, 0.15))
+            drop-shadow(0 1px 0 rgba(255, 255, 255, 0.1));
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
   
   .icon-3d:hover {
-    filter: drop-shadow(0 4px 6px rgba(255, 215, 0, 0.3)) 
-            drop-shadow(0 6px 12px rgba(255, 215, 0, 0.2));
-    transform: translateY(-2px);
+    filter: drop-shadow(0 6px 10px rgba(255, 215, 0, 0.5)) 
+            drop-shadow(0 10px 20px rgba(255, 215, 0, 0.3))
+            drop-shadow(0 2px 0 rgba(255, 215, 0, 0.2));
+    transform: translateY(-3px);
   }
   
   .icon-3d:active {
-    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.15)) 
-            drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+    filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.2)) 
+            drop-shadow(0 3px 6px rgba(0, 0, 0, 0.15));
     transform: translateY(0);
   }
 
@@ -411,6 +436,55 @@
 
   .glow-orange {
     box-shadow: var(--glow-orange);
+  }
+  
+  /* 3D Button effect */
+  .btn-3d {
+    position: relative;
+    transform: translateY(0);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: var(--shadow-3d);
+  }
+  
+  .btn-3d:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-3d-hover);
+  }
+  
+  .btn-3d:active {
+    transform: translateY(1px);
+    box-shadow: var(--shadow-3d-active);
+  }
+  
+  /* 3D Card effect */
+  .card-3d {
+    position: relative;
+    transform: translateY(0);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15),
+                0 8px 16px rgba(0, 0, 0, 0.1),
+                inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  }
+  
+  .card-3d:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2),
+                0 12px 24px rgba(0, 0, 0, 0.15),
+                0 0 30px rgba(255, 215, 0, 0.1),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  }
+  
+  .dark .card-3d {
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4),
+                0 10px 20px rgba(0, 0, 0, 0.3),
+                inset 0 1px 0 rgba(255, 215, 0, 0.1);
+  }
+  
+  .dark .card-3d:hover {
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5),
+                0 16px 32px rgba(0, 0, 0, 0.4),
+                0 0 40px rgba(255, 215, 0, 0.2),
+                inset 0 2px 0 rgba(255, 215, 0, 0.15);
   }
 }
 
