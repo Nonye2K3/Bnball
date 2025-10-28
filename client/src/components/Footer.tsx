@@ -19,7 +19,7 @@ export function Footer() {
                 href="#faq" 
                 className="block text-sm text-muted-foreground hover:text-primary transition-colors"
               >
-                FAQ,I
+                FAQ
               </a>
             </div>
           </div>

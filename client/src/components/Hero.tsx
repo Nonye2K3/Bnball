@@ -81,7 +81,7 @@ export function Hero() {
                 <div className="p-2 rounded-lg bg-primary/10">
                   <Activity className="w-6 h-6 text-primary" />
                 </div>
-                <span className="text-xs font-medium text-center">Real-timeprices</span>
+                <span className="text-xs font-medium text-center">Real-time prices</span>
               </motion.div>
               
               <motion.div
