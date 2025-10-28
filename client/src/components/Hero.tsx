@@ -1,7 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { TrendingUp, Shield, Zap } from "lucide-react";
 import { Link } from "wouter";
-import heroImage from "@assets/generated_images/Futuristic_sports_stadium_hero_0befccdc.png";
 import { motion, useScroll, useTransform } from "framer-motion";
 import { useRef } from "react";
 
@@ -64,16 +63,7 @@ export function Hero() {
   };
 
   return (
-    <div ref={ref} className="relative min-h-screen flex items-center justify-center overflow-hidden">
-      <motion.div
-        className="absolute inset-0 bg-cover bg-center"
-        style={{ 
-          backgroundImage: `url(${heroImage})`,
-          y: backgroundY
-        }}
-      >
-        <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/60 to-background"></div>
-      </motion.div>
+    <div ref={ref} className="relative min-h-screen flex items-center justify-center overflow-hidden bg-background">
       
       <motion.div 
         style={{ opacity }}
@@ -86,7 +76,7 @@ export function Hero() {
         >
           <motion.div 
             variants={itemVariants}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 backdrop-blur-sm mb-8"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 mb-8"
           >
             <Zap className="w-4 h-4 text-primary icon-3d" />
             <span className="text-sm font-semibold text-primary">First Sports Prediction Market on Binance Chain</span>
@@ -94,14 +84,14 @@ export function Hero() {
           
           <motion.h1 
             variants={itemVariants}
-            className="text-5xl sm:text-6xl lg:text-7xl font-bold mb-6 text-white"
+            className="text-5xl sm:text-6xl lg:text-7xl font-bold mb-6"
           >
             Predict. Compete. <span className="text-primary">Win.</span>
           </motion.h1>
           
           <motion.p 
             variants={itemVariants}
-            className="text-xl sm:text-2xl text-white/90 mb-12 max-w-3xl mx-auto"
+            className="text-xl sm:text-2xl text-muted-foreground mb-12 max-w-3xl mx-auto"
           >
             The future of sports betting is here. Fully on-chain, AI-powered results, transparent settlements. 
             Built on Binance Smart Chain with dual token economics.
@@ -132,7 +122,7 @@ export function Hero() {
                 <Button 
                   size="lg" 
                   variant="outline" 
-                  className="text-lg px-8 h-12 bg-background/20 backdrop-blur-md border-white/20 text-white hover:bg-background/30"
+                  className="text-lg px-8 h-12"
                   data-testid="button-how-it-works"
                 >
                   How It Works
@@ -148,33 +138,33 @@ export function Hero() {
             variants={featureVariants}
             initial="hidden"
             animate="visible"
-            className="flex flex-col items-center gap-3 p-6 rounded-xl bg-background/10 backdrop-blur-sm border border-white/10"
+            className="flex flex-col items-center gap-3 p-6 rounded-xl bg-card border border-border"
           >
             <Shield className="w-8 h-8 text-primary icon-3d" />
-            <h3 className="font-semibold text-lg text-white">100% On-Chain</h3>
-            <p className="text-sm text-white/70">Transparent, verifiable, trustless</p>
+            <h3 className="font-semibold text-lg">100% On-Chain</h3>
+            <p className="text-sm text-muted-foreground">Transparent, verifiable, trustless</p>
           </motion.div>
           <motion.div 
             custom={1}
             variants={featureVariants}
             initial="hidden"
             animate="visible"
-            className="flex flex-col items-center gap-3 p-6 rounded-xl bg-background/10 backdrop-blur-sm border border-white/10"
+            className="flex flex-col items-center gap-3 p-6 rounded-xl bg-card border border-border"
           >
             <TrendingUp className="w-8 h-8 text-primary icon-3d" />
-            <h3 className="font-semibold text-lg text-white">AI-Powered Results</h3>
-            <p className="text-sm text-white/70">Automated, accurate settlements</p>
+            <h3 className="font-semibold text-lg">AI-Powered Results</h3>
+            <p className="text-sm text-muted-foreground">Automated, accurate settlements</p>
           </motion.div>
           <motion.div 
             custom={2}
             variants={featureVariants}
             initial="hidden"
             animate="visible"
-            className="flex flex-col items-center gap-3 p-6 rounded-xl bg-background/10 backdrop-blur-sm border border-white/10"
+            className="flex flex-col items-center gap-3 p-6 rounded-xl bg-card border border-border"
           >
             <Zap className="w-8 h-8 text-primary icon-3d" />
-            <h3 className="font-semibold text-lg text-white">Instant Payouts</h3>
-            <p className="text-sm text-white/70">Get your winnings immediately</p>
+            <h3 className="font-semibold text-lg">Instant Payouts</h3>
+            <p className="text-sm text-muted-foreground">Get your winnings immediately</p>
           </motion.div>
         </div>
       </motion.div>
