@@ -87,6 +87,16 @@ export function PlaceBetModal({ open, onOpenChange, market }: PlaceBetModalProps
       return;
     }
 
+    // Check if market has been deployed on-chain
+    if (!market.contractMarketId || market.contractMarketId === 0) {
+      toast({
+        title: "Market Not Deployed",
+        description: "This market has not been deployed on the blockchain yet. Only deployed markets accept bets. Live sports markets from TheOddsAPI are for demonstration purposes only.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     const validation = validateBetAmount(betAmount);
     if (!validation.isValid) {
       toast({
@@ -97,10 +107,9 @@ export function PlaceBetModal({ open, onOpenChange, market }: PlaceBetModalProps
       return;
     }
 
-    const marketId = parseInt(market.id);
     const prediction = selectedOption === "yes";
     
-    await placeBet(marketId, prediction, betAmount);
+    await placeBet(market.id, prediction, betAmount);
   };
 
   useEffect(() => {

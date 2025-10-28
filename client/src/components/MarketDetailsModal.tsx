@@ -127,10 +127,9 @@ export function MarketDetailsModal({ open, onOpenChange, market }: MarketDetails
       return;
     }
 
-    const marketId = parseInt(market.id);
     const prediction = selectedOption === "yes";
     
-    await placeBet(marketId, prediction, betAmount);
+    await placeBet(market.id, prediction, betAmount);
   };
 
   const handleClaimWinnings = async () => {
@@ -153,8 +152,7 @@ export function MarketDetailsModal({ open, onOpenChange, market }: MarketDetails
       return;
     }
 
-    const marketId = parseInt(market.id);
-    await claimWinnings(marketId);
+    await claimWinnings(market.id);
   };
 
   useEffect(() => {

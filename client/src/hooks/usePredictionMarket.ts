@@ -72,6 +72,7 @@ export function usePlaceBet() {
   
   const betDataRef = useRef<{ 
     marketId: string; 
+    contractMarketId: number;
     prediction: string; 
     totalAmount: string;
     poolAmount: string;
@@ -106,28 +107,31 @@ export function usePlaceBet() {
           setCurrentStep('bet')
 
           // Now place the bet on the contract
-          const marketId = parseInt(betDataRef.current.marketId)
+          // Note: Contract expects integer market ID, but we store UUID in database
+          // For now, we'll need to map UUID to contract market ID
+          // This is a temporary workaround until contract integration is updated
+          const contractMarketId = betDataRef.current.contractMarketId || 0
           const prediction = betDataRef.current.prediction === 'yes'
           
           writeContract({
             address: getContractAddress(chainId),
             abi: PREDICTION_MARKET_ABI,
             functionName: 'placeBet',
-            args: [BigInt(marketId), prediction],
+            args: [BigInt(contractMarketId), prediction],
             value: BigInt(betDataRef.current.poolAmount), // 99% goes to the betting pool
           })
         } catch (error) {
           console.error('Failed to persist tax or place bet:', error)
           // Still try to place the bet even if persistence failed
           try {
-            const marketId = parseInt(betDataRef.current.marketId)
+            const contractMarketId = betDataRef.current.contractMarketId || 0
             const prediction = betDataRef.current.prediction === 'yes'
             
             writeContract({
               address: getContractAddress(chainId),
               abi: PREDICTION_MARKET_ABI,
               functionName: 'placeBet',
-              args: [BigInt(marketId), prediction],
+              args: [BigInt(contractMarketId), prediction],
               value: BigInt(betDataRef.current.poolAmount),
             })
           } catch (betErr) {
@@ -282,7 +286,7 @@ export function usePlaceBet() {
   }
 
   const placeBet = async (
-    marketId: number,
+    marketId: string,
     prediction: boolean,
     amount: string
   ) => {
@@ -355,12 +359,40 @@ export function usePlaceBet() {
     setGasEstimate(totalGasCost.gasCostBNB)
 
     // Store bet data for persistence after transactions succeed
+    // Note: We need to fetch the market to get its contractMarketId for blockchain interaction
+    // The marketId parameter is the UUID from the database
     betDataRef.current = {
-      marketId: marketId.toString(),
+      marketId: marketId, // Store UUID for database persistence
+      contractMarketId: 0, // Will be populated below if market has blockchain contract ID
       prediction: prediction ? 'yes' : 'no',
       totalAmount: totalBetWei.toString(),
       poolAmount: split.poolAmount.toString(),
       taxAmount: split.taxAmount.toString(),
+    }
+
+    // Fetch market to get contractMarketId if available
+    try {
+      const marketResponse = await fetch(`/api/markets/${marketId}`)
+      if (marketResponse.ok) {
+        const marketData = await marketResponse.json()
+        if (marketData.contractMarketId) {
+          betDataRef.current.contractMarketId = marketData.contractMarketId
+        }
+      }
+    } catch (err) {
+      console.warn('Could not fetch market contractMarketId:', err)
+    }
+
+    // Validate that market has been deployed on-chain
+    if (!betDataRef.current.contractMarketId || betDataRef.current.contractMarketId === 0) {
+      betDataRef.current = null
+      setBetSplit(null)
+      toast({
+        title: "Market Not Deployed",
+        description: "This market has not been deployed on the blockchain yet. Only deployed markets accept bets. Live sports markets from TheOddsAPI are for demonstration purposes only.",
+        variant: "destructive",
+      })
+      return
     }
 
     try {
@@ -662,7 +694,7 @@ export function useClaimWinnings() {
     }
   }, [writeError, confirmError, toast])
 
-  const claimWinnings = async (marketId: number) => {
+  const claimWinnings = async (marketId: string) => {
     if (!address) {
       toast({
         title: "Wallet Not Connected",
@@ -681,14 +713,38 @@ export function useClaimWinnings() {
       return
     }
 
-    marketIdRef.current = marketId
+    // Fetch market to get contractMarketId
+    let contractMarketId: number;
+    try {
+      const response = await fetch(`/api/markets/${marketId}`);
+      const market = await response.json();
+      contractMarketId = market.contractMarketId || 0;
+      
+      if (!contractMarketId) {
+        toast({
+          title: "Invalid Market",
+          description: "This market is not yet deployed on-chain",
+          variant: "destructive",
+        });
+        return;
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to fetch market details",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    marketIdRef.current = contractMarketId
 
     try {
       writeContract({
         address: getContractAddress(chainId),
         abi: PREDICTION_MARKET_ABI,
         functionName: 'claimWinnings',
-        args: [BigInt(marketId)],
+        args: [BigInt(contractMarketId)],
       })
     } catch (error) {
       marketIdRef.current = null
