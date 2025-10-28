@@ -20,7 +20,6 @@ export function CategoryFilter({ onCategoryChange }: CategoryFilterProps) {
   const handleSelect = (id: string) => {
     setSelected(id);
     onCategoryChange?.(id);
-    console.log('Category selected:', id);
   };
 
   return (

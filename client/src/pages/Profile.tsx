@@ -13,22 +13,13 @@ import { useUserBets } from "@/hooks/usePredictionMarket";
 import { useToast } from "@/hooks/use-toast";
 import { Copy, TrendingUp, TrendingDown, Target, Award } from "lucide-react";
 import { motion } from "framer-motion";
-import { useEffect, useMemo } from "react";
-import { useLocation } from "wouter";
+import { useMemo } from "react";
 import { formatEther } from "viem";
 
 export default function Profile() {
   const { address, formattedAddress, isConnected, chain } = useWeb3();
   const { bets } = useUserBets();
   const { toast } = useToast();
-  const [, setLocation] = useLocation();
-
-  // Redirect to home if not connected
-  useEffect(() => {
-    if (!isConnected) {
-      setLocation("/");
-    }
-  }, [isConnected, setLocation]);
 
   const handleCopyAddress = () => {
     if (address) {
@@ -88,8 +79,66 @@ export default function Profile() {
     };
   }, [bets]);
 
+  // Show connect wallet prompt if not connected
   if (!isConnected) {
-    return null; // Will redirect via useEffect
+    return (
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.3 }}
+        className="min-h-screen"
+        data-testid="page-profile"
+      >
+        <Navbar />
+        
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+          <motion.div
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ duration: 0.5 }}
+            className="text-center"
+          >
+            <Card className="p-12">
+              <div className="mb-6">
+                <div className="w-20 h-20 rounded-full bg-primary/10 mx-auto flex items-center justify-center mb-4">
+                  <Target className="w-10 h-10 text-primary" />
+                </div>
+                <h1 className="text-3xl font-bold mb-3" data-testid="heading-connect-wallet">
+                  Connect Your Wallet
+                </h1>
+                <p className="text-muted-foreground text-lg mb-8">
+                  To view your profile, betting history, and statistics, please connect your wallet.
+                </p>
+              </div>
+              
+              <div className="space-y-4">
+                <div className="flex flex-wrap gap-3 justify-center mb-6">
+                  <Badge variant="outline" className="text-sm">
+                    <TrendingUp className="w-3 h-3 mr-1" />
+                    Track Performance
+                  </Badge>
+                  <Badge variant="outline" className="text-sm">
+                    <Award className="w-3 h-3 mr-1" />
+                    View Statistics
+                  </Badge>
+                  <Badge variant="outline" className="text-sm">
+                    <Target className="w-3 h-3 mr-1" />
+                    Betting History
+                  </Badge>
+                </div>
+                
+                <p className="text-sm text-muted-foreground">
+                  Click the "Connect Wallet" button in the navigation bar to get started
+                </p>
+              </div>
+            </Card>
+          </motion.div>
+        </div>
+        
+        <Footer />
+      </motion.div>
+    );
   }
 
   return (

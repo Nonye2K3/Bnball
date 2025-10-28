@@ -45,6 +45,106 @@ function handleError(res: Response, error: any, operation: string, statusCode: n
   });
 }
 
+// Create sample markets for testing when API is unavailable
+function createSampleMarkets() {
+  const now = new Date();
+  const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+  const twoDaysLater = new Date(now.getTime() + 48 * 60 * 60 * 1000);
+  
+  return [
+    {
+      title: "Los Angeles Lakers vs Boston Celtics",
+      description: "Predict the winner of Los Angeles Lakers vs Boston Celtics in NBA",
+      category: "Basketball",
+      sport: "basketball_nba",
+      league: "NBA",
+      homeTeam: "Los Angeles Lakers",
+      awayTeam: "Boston Celtics",
+      oddsApiEventId: "sample_nba_1",
+      bookmaker: "sample_bookmaker",
+      startTime: tomorrow,
+      deadline: new Date(tomorrow.getTime() - 30 * 60 * 1000),
+      yesOdds: "52",
+      noOdds: "48",
+      resolutionMethod: "chainlink_oracle",
+      status: "live",
+      lastOddsUpdate: now,
+    },
+    {
+      title: "Kansas City Chiefs vs Buffalo Bills",
+      description: "Predict the winner of Kansas City Chiefs vs Buffalo Bills in NFL",
+      category: "American Football",
+      sport: "americanfootball_nfl",
+      league: "NFL",
+      homeTeam: "Kansas City Chiefs",
+      awayTeam: "Buffalo Bills",
+      oddsApiEventId: "sample_nfl_1",
+      bookmaker: "sample_bookmaker",
+      startTime: twoDaysLater,
+      deadline: new Date(twoDaysLater.getTime() - 30 * 60 * 1000),
+      yesOdds: "55",
+      noOdds: "45",
+      resolutionMethod: "chainlink_oracle",
+      status: "upcoming",
+      lastOddsUpdate: now,
+    },
+    {
+      title: "Manchester City vs Liverpool",
+      description: "Predict the winner of Manchester City vs Liverpool in English Premier League",
+      category: "Soccer",
+      sport: "soccer_epl",
+      league: "EPL",
+      homeTeam: "Manchester City",
+      awayTeam: "Liverpool",
+      oddsApiEventId: "sample_epl_1",
+      bookmaker: "sample_bookmaker",
+      startTime: tomorrow,
+      deadline: new Date(tomorrow.getTime() - 30 * 60 * 1000),
+      yesOdds: "48",
+      noOdds: "52",
+      resolutionMethod: "chainlink_oracle",
+      status: "live",
+      lastOddsUpdate: now,
+    },
+    {
+      title: "Real Madrid vs FC Barcelona",
+      description: "Predict the winner of Real Madrid vs FC Barcelona in La Liga",
+      category: "Soccer",
+      sport: "soccer_spain_la_liga",
+      league: "La Liga",
+      homeTeam: "Real Madrid",
+      awayTeam: "FC Barcelona",
+      oddsApiEventId: "sample_laliga_1",
+      bookmaker: "sample_bookmaker",
+      startTime: twoDaysLater,
+      deadline: new Date(twoDaysLater.getTime() - 30 * 60 * 1000),
+      yesOdds: "50",
+      noOdds: "50",
+      resolutionMethod: "chainlink_oracle",
+      status: "upcoming",
+      lastOddsUpdate: now,
+    },
+    {
+      title: "Jon Jones vs Stipe Miocic",
+      description: "Predict the winner of Jon Jones vs Stipe Miocic in MMA",
+      category: "Combat Sports",
+      sport: "mma_mixed_martial_arts",
+      league: "UFC",
+      homeTeam: "Jon Jones",
+      awayTeam: "Stipe Miocic",
+      oddsApiEventId: "sample_mma_1",
+      bookmaker: "sample_bookmaker",
+      startTime: tomorrow,
+      deadline: new Date(tomorrow.getTime() - 30 * 60 * 1000),
+      yesOdds: "65",
+      noOdds: "35",
+      resolutionMethod: "chainlink_oracle",
+      status: "live",
+      lastOddsUpdate: now,
+    },
+  ];
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   
   // POST /api/bets - Create new bet record after blockchain transaction
@@ -440,8 +540,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       logRequest('POST', '/api/markets/sync-sports');
       
-      const liveMatches = await oddsApiService.getAllUpcomingMatches();
+      let liveMatches = await oddsApiService.getAllUpcomingMatches();
       const createdMarkets = [];
+      
+      // If no matches from API (API error, no key, etc.), create sample markets for testing
+      if (liveMatches.length === 0) {
+        console.log('No matches from OddsAPI, creating sample markets for testing...');
+        liveMatches = createSampleMarkets();
+      }
       
       for (const matchData of liveMatches) {
         // Check if market already exists for this event
@@ -466,7 +572,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.json({
         message: `Synced ${liveMatches.length} matches`,
         created: createdMarkets.length,
-        total: liveMatches.length
+        total: liveMatches.length,
+        source: liveMatches.length > 0 && liveMatches[0].oddsApiEventId?.startsWith('sample_') ? 'sample' : 'live'
       });
     } catch (error) {
       return handleError(res, error, 'sync sports data');
