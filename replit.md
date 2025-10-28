@@ -154,20 +154,43 @@ Preferred communication style: Simple, everyday language.
   - AI verification for complex scenarios
   - Community governance voting for disputes
 
+**Smart Contract Deployment (Latest):**
+- ✅ **PredictionMarket.sol** - Production-ready Solidity contract deployed
+- ✅ **Hardhat Infrastructure** - Full deployment toolchain configured for BSC Mainnet/Testnet
+- ✅ **Security Audited** - All critical vulnerabilities fixed:
+  - Removed owner drain function
+  - Tracks actual stake amounts per market
+  - Uses call() instead of transfer() for smart contract wallet compatibility
+  - Handles zero-winner edge case with proportional refunds
+  - Follows checks-effects-interactions pattern to prevent reentrancy
+- ✅ **Contract Features:**
+  - createMarket: Requires 1.0 BNB stake (refunded after resolution)
+  - placeBet: Minimum 0.5 BNB, prevents double-betting
+  - resolveMarket: Owner-only, pays 0.5% creator fee + refunds stake
+  - claimWinnings: Proportional payouts, handles zero-winner scenarios
+  - View functions: getMarketDetails, getUserBets, getUserBetInMarket
+
+**Deployment Infrastructure:**
+- **Hardhat** - Solidity compilation and deployment framework
+- **Scripts:** Automated deployment script with balance checks and verification
+- **Configuration:** BSC Mainnet (Chain ID 56) and Testnet (Chain ID 97)
+- **Verification:** BSCScan integration for contract source code verification
+- **Documentation:** Comprehensive DEPLOYMENT.md guide with step-by-step instructions
+
 **Implementation:**
 - Complete smart contract interaction layer with wagmi hooks
 - PredictionMarket contract ABI with functions: placeBet, claimWinnings, createMarket, resolveMarket
-- 0.1 BNB minimum bet enforcement (validated before transaction)
+- 0.5 BNB minimum bet enforcement (validated before transaction)
 - Gas estimation with 20% buffer for transaction reliability
 - Transaction confirmation with real-time status updates
 - BSCScan integration for transaction viewing
 - Bet and transaction persistence to database after on-chain confirmation
 
 **Integration Points:**
-- Escrow vault contract for holding betting funds
-- Market creation contract (requires BNBALL staking)
-- Automated settlement based on oracle data
-- Dispute resolution mechanism
+- Escrow wallet for 1% platform tax collection
+- Market creation requires exact stake payment (1.0 BNB)
+- Creator fee distribution (0.5% of total pool)
+- Dispute resolution mechanism (centralized owner control - future: DAO governance)
 
 ## External Dependencies
 
