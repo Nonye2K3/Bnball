@@ -188,6 +188,7 @@ export function usePlaceBet() {
           // Invalidate relevant queries
           await queryClient.invalidateQueries({ queryKey: [`/api/bets/${address}`] })
           await queryClient.invalidateQueries({ queryKey: [`/api/transactions/${address}`] })
+          await queryClient.invalidateQueries({ queryKey: ['/api/markets'] })
           
           toast({
             title: "Bet Placed Successfully!",

@@ -123,6 +123,13 @@ export class MemStorage implements IStorage {
       noPoolOnChain: insertMarket.noPoolOnChain ?? null,
       resolvedTransactionHash: insertMarket.resolvedTransactionHash ?? null,
       resolvedAt: insertMarket.resolvedAt ?? null,
+      oddsApiEventId: insertMarket.oddsApiEventId ?? null,
+      homeTeam: insertMarket.homeTeam ?? null,
+      awayTeam: insertMarket.awayTeam ?? null,
+      sport: insertMarket.sport ?? null,
+      league: insertMarket.league ?? null,
+      bookmaker: insertMarket.bookmaker ?? null,
+      lastOddsUpdate: insertMarket.lastOddsUpdate ?? null,
     };
     this.predictionMarkets.set(id, market);
     return market;
@@ -187,8 +194,8 @@ export class MemStorage implements IStorage {
       timestamp: new Date(),
       claimed: insertBet.claimed ?? false,
       claimTransactionHash: insertBet.claimTransactionHash ?? null,
-      refundEligible: insertBet.refundEligible ?? false,
-      refundProcessed: insertBet.refundProcessed ?? false,
+      refundEligible: false,
+      refundProcessed: false,
     };
     this.bets.set(id, bet);
     return bet;

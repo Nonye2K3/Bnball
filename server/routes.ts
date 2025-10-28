@@ -11,6 +11,7 @@ import {
   logSecurityEvent 
 } from "./blockchain";
 import { TwitterApi } from 'twitter-api-v2';
+import { oddsApiService } from "./services/oddsApi";
 
 // Logging utility
 function logRequest(method: string, path: string, data?: any) {
@@ -431,6 +432,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.json(markets);
     } catch (error) {
       return handleError(res, error, 'fetch markets');
+    }
+  });
+
+  // POST /api/markets/sync-sports - Sync live sports data from TheOddsAPI
+  app.post("/api/markets/sync-sports", async (req: Request, res: Response) => {
+    try {
+      logRequest('POST', '/api/markets/sync-sports');
+      
+      const liveMatches = await oddsApiService.getAllUpcomingMatches();
+      const createdMarkets = [];
+      
+      for (const matchData of liveMatches) {
+        // Check if market already exists for this event
+        const existingMarkets = await storage.getAllPredictionMarkets();
+        const existingMarket = existingMarkets.find(
+          m => m.oddsApiEventId === matchData.oddsApiEventId
+        );
+        
+        if (!existingMarket) {
+          // Create new market
+          const market = await storage.createPredictionMarket(matchData as any);
+          createdMarkets.push(market);
+        } else {
+          // Update existing market odds
+          const updatedMarketData = await oddsApiService.updateMarketOdds(existingMarket);
+          if (updatedMarketData) {
+            await storage.updatePredictionMarket(existingMarket.id, updatedMarketData);
+          }
+        }
+      }
+      
+      return res.json({
+        message: `Synced ${liveMatches.length} matches`,
+        created: createdMarkets.length,
+        total: liveMatches.length
+      });
+    } catch (error) {
+      return handleError(res, error, 'sync sports data');
     }
   });
 

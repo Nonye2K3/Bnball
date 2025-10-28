@@ -32,10 +32,19 @@ export const predictionMarkets = pgTable("prediction_markets", {
   noPoolOnChain: decimal("no_pool_on_chain", { precision: 18, scale: 8 }),
   resolvedTransactionHash: text("resolved_transaction_hash"),
   resolvedAt: timestamp("resolved_at"),
+  oddsApiEventId: text("odds_api_event_id"),
+  homeTeam: text("home_team"),
+  awayTeam: text("away_team"),
+  sport: text("sport"),
+  league: text("league"),
+  bookmaker: text("bookmaker"),
+  lastOddsUpdate: timestamp("last_odds_update"),
 }, (table) => ({
   chainIdIdx: index("prediction_markets_chain_id_idx").on(table.chainId),
   transactionHashIdx: index("prediction_markets_transaction_hash_idx").on(table.transactionHash),
   creatorAddressIdx: index("prediction_markets_creator_address_idx").on(table.creatorAddress),
+  oddsApiEventIdIdx: index("prediction_markets_odds_api_event_id_idx").on(table.oddsApiEventId),
+  sportIdx: index("prediction_markets_sport_idx").on(table.sport),
 }));
 
 export const bets = pgTable("bets", {
