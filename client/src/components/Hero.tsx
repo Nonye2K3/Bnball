@@ -1,25 +1,16 @@
 import { Button } from "@/components/ui/button";
-import { TrendingUp, Shield, Zap } from "lucide-react";
+import { FileText, Download, TrendingUp, CheckCircle } from "lucide-react";
 import { Link } from "wouter";
-import { motion, useScroll, useTransform } from "framer-motion";
-import { useRef } from "react";
+import { motion } from "framer-motion";
+import { SoccerBall3D } from "./SoccerBall3D";
 
 export function Hero() {
-  const ref = useRef<HTMLDivElement>(null);
-  const { scrollYProgress } = useScroll({
-    target: ref,
-    offset: ["start start", "end start"]
-  });
-
-  const backgroundY = useTransform(scrollYProgress, [0, 1], ["0%", "50%"]);
-  const opacity = useTransform(scrollYProgress, [0, 0.5], [1, 0]);
-
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
       opacity: 1,
       transition: {
-        staggerChildren: 0.2,
+        staggerChildren: 0.15,
         delayChildren: 0.1
       }
     }
@@ -37,25 +28,13 @@ export function Hero() {
     }
   };
 
-  const floatingVariants = {
-    initial: { y: 0 },
-    animate: {
-      y: [-5, 5, -5],
-      transition: {
-        duration: 3,
-        repeat: Infinity,
-        ease: "easeInOut"
-      }
-    }
-  };
-
-  const featureVariants = {
+  const iconVariants = {
     hidden: { opacity: 0, scale: 0.8 },
     visible: (i: number) => ({
       opacity: 1,
       scale: 1,
       transition: {
-        delay: 0.8 + (i * 0.1),
+        delay: 0.6 + (i * 0.1),
         duration: 0.5,
         ease: "easeOut"
       }
@@ -63,111 +42,123 @@ export function Hero() {
   };
 
   return (
-    <div ref={ref} className="relative min-h-screen flex items-center justify-center overflow-hidden bg-background">
-      
-      <motion.div 
-        style={{ opacity }}
-        className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 text-center"
-      >
-        <motion.div
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
-        >
-          <motion.div 
-            variants={itemVariants}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 mb-8"
+    <div className="relative min-h-screen flex items-center justify-center overflow-hidden bg-background">
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+          {/* Left Column - Text Content */}
+          <motion.div
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
           >
-            <Zap className="w-4 h-4 text-primary icon-3d" />
-            <span className="text-sm font-semibold text-primary">First Sports Prediction Market on Binance Chain</span>
-          </motion.div>
-          
-          <motion.h1 
-            variants={itemVariants}
-            className="text-5xl sm:text-6xl lg:text-7xl font-bold mb-6"
-          >
-            Predict. Compete. <span className="text-primary">Win.</span>
-          </motion.h1>
-          
-          <motion.p 
-            variants={itemVariants}
-            className="text-xl sm:text-2xl text-muted-foreground mb-12 max-w-3xl mx-auto"
-          >
-            The future of sports betting is here. Fully on-chain, AI-powered results, transparent settlements. 
-            Built on Binance Smart Chain with dual token economics.
-          </motion.p>
-          
-          <motion.div 
-            variants={itemVariants}
-            className="flex flex-wrap items-center justify-center gap-4 mb-16"
-          >
-            <motion.div variants={floatingVariants} initial="initial" animate="animate">
+            <motion.h1 
+              variants={itemVariants}
+              className="text-5xl sm:text-6xl lg:text-7xl font-bold mb-6 leading-tight"
+            >
+              Sports predictions,<br />
+              <span className="text-foreground">on-chain and</span><br />
+              <span className="text-foreground">transparent.</span>
+            </motion.h1>
+            
+            <motion.p 
+              variants={itemVariants}
+              className="text-lg sm:text-xl text-muted-foreground mb-10 max-w-xl"
+            >
+              Predict real matches on BNB Chain with decentralized and non-custodial markets.
+            </motion.p>
+            
+            <motion.div 
+              variants={itemVariants}
+              className="flex flex-wrap items-center gap-4 mb-12"
+            >
               <Link href="/markets">
                 <Button 
                   size="lg" 
-                  className="text-lg px-8 h-12"
+                  className="text-base px-8 h-12 bg-primary hover:bg-primary/90"
                   data-testid="button-start-predicting"
                 >
-                  Start Predicting
+                  Start predicting
                 </Button>
               </Link>
-            </motion.div>
-            <motion.div 
-              variants={floatingVariants} 
-              initial="initial" 
-              animate="animate"
-              style={{ transitionDelay: "0.2s" }}
-            >
               <Link href="/how-it-works">
                 <Button 
                   size="lg" 
                   variant="outline" 
-                  className="text-lg px-8 h-12"
+                  className="text-base px-8 h-12"
                   data-testid="button-how-it-works"
                 >
-                  How It Works
+                  How it works
                 </Button>
               </Link>
             </motion.div>
+            
+            {/* Feature Icons */}
+            <motion.div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+              <motion.div
+                custom={0}
+                variants={iconVariants}
+                initial="hidden"
+                animate="visible"
+                className="flex flex-col items-center gap-3 p-4 rounded-xl bg-card/50 border border-border/50"
+              >
+                <div className="p-3 rounded-lg bg-primary/10">
+                  <FileText className="w-6 h-6 text-primary icon-3d" />
+                </div>
+                <span className="text-sm font-medium text-center">Non-custodial</span>
+              </motion.div>
+              
+              <motion.div
+                custom={1}
+                variants={iconVariants}
+                initial="hidden"
+                animate="visible"
+                className="flex flex-col items-center gap-3 p-4 rounded-xl bg-card/50 border border-border/50"
+              >
+                <div className="p-3 rounded-lg bg-primary/10">
+                  <Download className="w-6 h-6 text-primary icon-3d" />
+                </div>
+                <span className="text-sm font-medium text-center">Low fees</span>
+              </motion.div>
+              
+              <motion.div
+                custom={2}
+                variants={iconVariants}
+                initial="hidden"
+                animate="visible"
+                className="flex flex-col items-center gap-3 p-4 rounded-xl bg-card/50 border border-border/50"
+              >
+                <div className="p-3 rounded-lg bg-primary/10">
+                  <TrendingUp className="w-6 h-6 text-primary icon-3d" />
+                </div>
+                <span className="text-sm font-medium text-center">Real-time prices</span>
+              </motion.div>
+              
+              <motion.div
+                custom={3}
+                variants={iconVariants}
+                initial="hidden"
+                animate="visible"
+                className="flex flex-col items-center gap-3 p-4 rounded-xl bg-card/50 border border-border/50"
+              >
+                <div className="p-3 rounded-lg bg-primary/10">
+                  <CheckCircle className="w-6 h-6 text-primary icon-3d" />
+                </div>
+                <span className="text-sm font-medium text-center">On-chain payouts</span>
+              </motion.div>
+            </motion.div>
           </motion.div>
-        </motion.div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto">
-          <motion.div 
-            custom={0}
-            variants={featureVariants}
-            initial="hidden"
-            animate="visible"
-            className="flex flex-col items-center gap-3 p-6 rounded-xl bg-card border border-border"
+          
+          {/* Right Column - 3D Soccer Balls */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.8, delay: 0.3 }}
+            className="hidden lg:block"
           >
-            <Shield className="w-8 h-8 text-primary icon-3d" />
-            <h3 className="font-semibold text-lg">100% On-Chain</h3>
-            <p className="text-sm text-muted-foreground">Transparent, verifiable, trustless</p>
-          </motion.div>
-          <motion.div 
-            custom={1}
-            variants={featureVariants}
-            initial="hidden"
-            animate="visible"
-            className="flex flex-col items-center gap-3 p-6 rounded-xl bg-card border border-border"
-          >
-            <TrendingUp className="w-8 h-8 text-primary icon-3d" />
-            <h3 className="font-semibold text-lg">AI-Powered Results</h3>
-            <p className="text-sm text-muted-foreground">Automated, accurate settlements</p>
-          </motion.div>
-          <motion.div 
-            custom={2}
-            variants={featureVariants}
-            initial="hidden"
-            animate="visible"
-            className="flex flex-col items-center gap-3 p-6 rounded-xl bg-card border border-border"
-          >
-            <Zap className="w-8 h-8 text-primary icon-3d" />
-            <h3 className="font-semibold text-lg">Instant Payouts</h3>
-            <p className="text-sm text-muted-foreground">Get your winnings immediately</p>
+            <SoccerBall3D />
           </motion.div>
         </div>
-      </motion.div>
+      </div>
     </div>
   );
 }
