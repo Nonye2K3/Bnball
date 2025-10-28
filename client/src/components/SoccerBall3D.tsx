@@ -107,12 +107,6 @@ export function SoccerBall3D() {
         camera={{ position: [0, 0, 5], fov: 50 }}
         gl={{ alpha: true, antialias: true }}
         style={{ background: 'transparent' }}
-        onCreated={({ gl }) => {
-          // Additional WebGL context validation
-          if (!gl.getContext()) {
-            setHasError(true);
-          }
-        }}
         onError={(error) => {
           console.error('Three.js Canvas error:', error);
           setHasError(true);
