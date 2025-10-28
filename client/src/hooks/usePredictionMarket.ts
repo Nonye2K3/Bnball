@@ -21,8 +21,10 @@ import {
 } from '@/utils/blockchain'
 import { useState, useEffect, useRef } from 'react'
 import { useToast } from '@/hooks/use-toast'
+import { useQuery } from '@tanstack/react-query'
 import { apiRequest, queryClient } from '@/lib/queryClient'
 import { persistTransaction } from './useWeb3'
+import type { Bet } from '@shared/schema'
 
 /**
  * Hook for placing a bet on a prediction market with 1% escrow tax
@@ -875,5 +877,24 @@ export function useUserBet(marketId: number, userAddress: string) {
     betData: data as any,
     isLoading,
     error,
+  }
+}
+
+/**
+ * Hook for fetching all bets for the connected user
+ */
+export function useUserBets() {
+  const { address } = useAccount()
+  
+  const { data: bets, isLoading, error, refetch } = useQuery<Bet[]>({
+    queryKey: [`/api/bets/${address}`],
+    enabled: !!address,
+  })
+
+  return {
+    bets,
+    isLoading,
+    error,
+    refetch,
   }
 }
