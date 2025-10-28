@@ -5,7 +5,7 @@ import { useWeb3 } from "@/hooks/useWeb3";
 import { Wallet, Menu, X, LogOut } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
-import logoImage from "@assets/generated_images/BNBall_logo_design_5d68f7d3.png";
+import logoImage from "@assets/file_00000000851061f48f85c204c1e60aa9_1761600862005.png";
 
 export function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -25,9 +25,8 @@ export function Navbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center gap-8">
-            <Link href="/" className="flex items-center gap-3">
-              <img src={logoImage} alt="BNBall" className="h-8 w-8" />
-              <span className="text-xl font-bold">BNBall</span>
+            <Link href="/" className="flex items-center gap-3" data-testid="link-home">
+              <img src={logoImage} alt="BNBall Logo" className="h-12 w-auto" />
             </Link>
             
             <div className="hidden md:flex items-center gap-6">
