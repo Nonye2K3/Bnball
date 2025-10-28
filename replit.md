@@ -30,7 +30,7 @@ Preferred communication style: Simple, everyday language.
 - No emoji usage per design guidelines (replaced with text and icons)
 
 **Key Pages:**
-- Home (Landing): Hero section with wallet connection and navigation
+- Home (Landing): Redesigned to match reference with Hero (3D soccer balls, feature cards), Live Markets preview (chart visualizations, YES/NO toggles), How It Works (left-aligned steps), and Footer
 - Markets: Live prediction markets with betting interface
 - How It Works: Platform explanation with parallax animations
 - Tokenomics: Dual-token economy details
@@ -38,6 +38,15 @@ Preferred communication style: Simple, everyday language.
 - Profile: User wallet balance, betting history with X/Twitter sharing, and transaction history
 - Leaderboard: User rankings and statistics (planned)
 - Create Market: Form for creating new prediction markets (planned)
+
+**Homepage Redesign (Latest):**
+- **Navbar:** Simplified with Markets, How It Works, Whitepaper links + Connect Wallet button
+- **Hero Section:** Green heading "Sports predictions, on-chain and transparent", exact subtitle, two CTAs (Start Predicting, How It Works), four feature cards (Non-custodial, Low fees, Real-time prices, On-chain payouts), 3D interactive soccer balls with Binance logo (gracefully degrades in headless browsers)
+- **Live Markets Preview:** Three market cards with league badges, countdown timers, mini chart visualizations, exact labels (H142, Realtime prices, Pook time prices, H/H), YES/NO toggle buttons, Predict button
+- **How It Works:** Left-aligned three steps (Pick a match, Predict YES or NO, Withdraw on-chain) with right-aligned bullet points (Price by oracles, Audited smart contracts, Secure treasury)
+- **Footer:** Learn section (Whitepaper, FAQ), Community section (Twitter, Telegram), social icons, "Play responsibly" text
+- **3D Elements:** Three.js integration with error handling for WebGL compatibility
+- **Light/Dark Mode:** Full support with black background (dark) and white/light gray background (light), yellow/green/orange accents maintained across both themes
 
 **Social Features:**
 - **Win Sharing:** Users can share winning bets to X/Twitter with auto-generated branded images

@@ -1,6 +1,6 @@
 import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls, Sphere } from '@react-three/drei';
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import * as THREE from 'three';
 
 function Ball({ position, scale, autoRotate = true }: { position: [number, number, number]; scale: number; autoRotate?: boolean }) {
@@ -80,12 +80,43 @@ function Ball({ position, scale, autoRotate = true }: { position: [number, numbe
 }
 
 export function SoccerBall3D() {
+  const [webglSupported, setWebglSupported] = useState(true);
+  const [hasError, setHasError] = useState(false);
+
+  useEffect(() => {
+    // Check for WebGL support
+    try {
+      const canvas = document.createElement('canvas');
+      const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+      if (!gl) {
+        setWebglSupported(false);
+      }
+    } catch (e) {
+      setWebglSupported(false);
+    }
+  }, []);
+
+  // Don't render anything if WebGL is not supported or there was an error
+  if (!webglSupported || hasError) {
+    return null;
+  }
+
   return (
     <div className="w-full h-full pointer-events-auto" style={{ minHeight: '500px' }}>
       <Canvas
         camera={{ position: [0, 0, 5], fov: 50 }}
         gl={{ alpha: true, antialias: true }}
         style={{ background: 'transparent' }}
+        onCreated={({ gl }) => {
+          // Additional WebGL context validation
+          if (!gl.getContext()) {
+            setHasError(true);
+          }
+        }}
+        onError={(error) => {
+          console.error('Three.js Canvas error:', error);
+          setHasError(true);
+        }}
       >
         <ambientLight intensity={0.5} />
         <directionalLight position={[10, 10, 5]} intensity={1} />
