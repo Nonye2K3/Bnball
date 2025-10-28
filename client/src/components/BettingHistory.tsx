@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useWeb3 } from "@/hooks/useWeb3";
 import { useClaimWinnings } from "@/hooks/usePredictionMarket";
-import { TrendingUp, Trophy, XCircle, Clock, Coins } from "lucide-react";
+import { ShareWinModal } from "@/components/ShareWinModal";
+import { TrendingUp, Trophy, XCircle, Clock, Coins, Share2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useState } from "react";
 import { formatDistanceToNow } from "date-fns";
@@ -31,6 +32,8 @@ interface BetInfo {
 export function BettingHistory() {
   const { address, isConnected } = useWeb3();
   const [filter, setFilter] = useState<BetStatus>("All");
+  const [shareModalOpen, setShareModalOpen] = useState(false);
+  const [selectedBetId, setSelectedBetId] = useState<string>('');
   const { claimWinnings, isLoading: isClaiming } = useClaimWinnings();
 
   // Fetch bets from database
@@ -255,25 +258,58 @@ export function BettingHistory() {
                 )}
               </div>
 
-              {bet.status === "Unclaimed" && (
-                <motion.div
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  <Button
-                    className="w-full"
-                    onClick={() => handleClaim(bet.marketId)}
-                    disabled={isClaiming}
-                    data-testid={`button-claim-${index}`}
+              <div className="flex gap-2">
+                {bet.status === "Unclaimed" && (
+                  <motion.div
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    className="flex-1"
                   >
-                    <Trophy className="w-4 h-4 mr-2" />
-                    {isClaiming ? "Claiming..." : "Claim Winnings"}
-                  </Button>
-                </motion.div>
-              )}
+                    <Button
+                      className="w-full"
+                      onClick={() => handleClaim(bet.marketId)}
+                      disabled={isClaiming}
+                      data-testid={`button-claim-${index}`}
+                    >
+                      <Trophy className="w-4 h-4 mr-2" />
+                      {isClaiming ? "Claiming..." : "Claim Winnings"}
+                    </Button>
+                  </motion.div>
+                )}
+                {bet.status === "Won" && (
+                  <motion.div
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    className="w-full"
+                  >
+                    <Button
+                      variant="outline"
+                      className="w-full"
+                      onClick={() => {
+                        setSelectedBetId(bet.id);
+                        setShareModalOpen(true);
+                      }}
+                      data-testid={`button-share-${index}`}
+                    >
+                      <Share2 className="w-4 h-4 mr-2" />
+                      Share Win
+                    </Button>
+                  </motion.div>
+                )}
+              </div>
             </motion.div>
           ))}
         </motion.div>
+      )}
+      
+      {/* Share Win Modal */}
+      {address && (
+        <ShareWinModal
+          open={shareModalOpen}
+          onOpenChange={setShareModalOpen}
+          betId={selectedBetId}
+          userAddress={address}
+        />
       )}
     </Card>
   );

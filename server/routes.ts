@@ -10,6 +10,7 @@ import {
   verifyTransactionValue,
   logSecurityEvent 
 } from "./blockchain";
+import { TwitterApi } from 'twitter-api-v2';
 
 // Logging utility
 function logRequest(method: string, path: string, data?: any) {
@@ -448,6 +449,126 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.json(market);
     } catch (error) {
       return handleError(res, error, 'fetch market');
+    }
+  });
+
+  // GET /api/social/win-data/:betId - Get win data for generating share image
+  app.get("/api/social/win-data/:betId", verifyWalletAddress, async (req: Request, res: Response) => {
+    try {
+      const { betId } = req.params;
+      const walletAddress = req.validatedUserAddress!;
+      
+      logRequest('GET', `/api/social/win-data/${betId}`);
+      
+      // Get bet data
+      const bet = await storage.getBet(betId);
+      if (!bet) {
+        return res.status(404).json({ error: "Bet not found" });
+      }
+      
+      // Verify bet belongs to user
+      if (bet.userAddress.toLowerCase() !== walletAddress.toLowerCase()) {
+        return res.status(403).json({ error: "Not authorized to access this bet" });
+      }
+      
+      const market = await storage.getPredictionMarket(bet.marketId);
+      if (!market) {
+        return res.status(404).json({ error: "Market not found" });
+      }
+      
+      // Check if bet won
+      if (market.status !== 'completed' || market.result === null) {
+        return res.status(400).json({ error: "Market not yet resolved" });
+      }
+      
+      const betWon = (bet.prediction && market.result) || (!bet.prediction && !market.result);
+      if (!betWon) {
+        return res.status(400).json({ error: "This bet did not win" });
+      }
+      
+      // Calculate win amount (simplified - in production would come from blockchain)
+      const stakeAmount = BigInt(bet.amount);
+      const odds = bet.prediction ? parseFloat(market.yesOdds) : parseFloat(market.noOdds);
+      const winAmount = stakeAmount * BigInt(Math.floor(odds * 100)) / BigInt(100);
+      const multiplier = odds;
+      
+      // Return data for frontend to generate image
+      return res.json({
+        success: true,
+        data: {
+          marketTitle: market.title,
+          prediction: bet.prediction ? 'YES' : 'NO',
+          stakeAmount: bet.amount,
+          winAmount: winAmount.toString(),
+          multiplier,
+          username: walletAddress.slice(0, 6) + '...' + walletAddress.slice(-4),
+          betId: bet.id,
+          marketId: market.id
+        }
+      });
+    } catch (error) {
+      return handleError(res, error, 'fetch win data');
+    }
+  });
+
+  // POST /api/social/share-to-x - Post win to X/Twitter
+  app.post("/api/social/share-to-x", verifyWalletAddress, async (req: Request, res: Response) => {
+    try {
+      logRequest('POST', '/api/social/share-to-x', req.body);
+      
+      const schema = z.object({
+        imageBuffer: z.string(), // base64 encoded image
+        text: z.string(),
+        marketTitle: z.string(),
+        winAmount: z.string()
+      });
+      
+      const { imageBuffer, text, marketTitle, winAmount } = schema.parse(req.body);
+      
+      // Check for X API credentials
+      const apiKey = process.env.X_API_KEY || process.env.TWITTER_API_KEY;
+      const apiSecret = process.env.X_API_SECRET || process.env.TWITTER_API_SECRET;
+      const accessToken = process.env.X_ACCESS_TOKEN || process.env.TWITTER_ACCESS_TOKEN;
+      const accessSecret = process.env.X_ACCESS_SECRET || process.env.TWITTER_ACCESS_SECRET;
+      
+      if (!apiKey || !apiSecret || !accessToken || !accessSecret) {
+        return res.status(503).json({ 
+          error: "X/Twitter integration not configured",
+          message: "Please contact support to enable X posting"
+        });
+      }
+      
+      // Initialize Twitter client
+      const twitterClient = new TwitterApi({
+        appKey: apiKey,
+        appSecret: apiSecret,
+        accessToken: accessToken,
+        accessSecret: accessSecret,
+      });
+      
+      // Upload image
+      const imageData = Buffer.from(imageBuffer, 'base64');
+      const mediaId = await twitterClient.v1.uploadMedia(imageData, { mimeType: 'image/png' });
+      
+      // Post tweet
+      const tweet = await twitterClient.v2.tweet({
+        text: text,
+        media: { media_ids: [mediaId] }
+      });
+      
+      logRequest('POST', '/api/social/share-to-x', { success: true, tweetId: tweet.data.id });
+      
+      return res.json({
+        success: true,
+        tweetId: tweet.data.id,
+        tweetUrl: `https://twitter.com/i/web/status/${tweet.data.id}`
+      });
+    } catch (error: any) {
+      console.error('X posting error:', error);
+      return res.status(500).json({ 
+        error: "Failed to post to X",
+        message: error.message || "Please try again later"
+      });
     }
   });
 
