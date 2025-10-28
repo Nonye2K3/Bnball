@@ -1,63 +1,130 @@
-import { Calendar, Coins, Trophy } from "lucide-react";
+import { Calendar, Wallet, CheckCircle, Shield, FileCheck } from "lucide-react";
 import { motion } from "framer-motion";
 
 export function HowItWorksPreview() {
-  const steps = [
-    {
-      icon: Calendar,
-      title: "Pick a match",
-      description: "Choose from live sports events",
-      color: "text-primary"
-    },
-    {
-      icon: Coins,
-      title: "Predict YES or NO",
-      description: "Place your prediction on-chain",
-      color: "text-primary"
-    },
-    {
-      icon: Trophy,
-      title: "Withdraw on-chain",
-      description: "Claim winnings instantly",
-      color: "text-primary"
-    }
-  ];
-
   return (
-    <div className="py-20 bg-background">
+    <div className="py-16 bg-card/20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-16">
-          <h2 className="text-3xl sm:text-4xl font-bold mb-4">How it works</h2>
-        </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12">
-          {steps.map((step, index) => (
-            <motion.div
-              key={step.title}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+          {/* Left Side - Steps */}
+          <div>
+            <motion.h2 
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: index * 0.2 }}
+              transition={{ duration: 0.6 }}
               viewport={{ once: true }}
-              className="flex flex-col items-center text-center"
+              className="text-4xl font-bold mb-12"
             >
-              {/* Icon Container */}
-              <div className="relative mb-6">
-                {/* Background Circle */}
-                <div className="w-32 h-32 rounded-2xl bg-card border border-border/50 flex items-center justify-center">
-                  <step.icon className={`w-16 h-16 ${step.color} icon-3d`} />
+              How It Works
+            </motion.h2>
+            
+            <div className="flex items-start gap-8 mb-8">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.8 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.6, delay: 0.1 }}
+                viewport={{ once: true }}
+                className="flex flex-col items-center gap-3"
+              >
+                <div className="w-16 h-16 rounded-lg border-2 border-primary bg-card flex items-center justify-center">
+                  <Calendar className="w-8 h-8 text-primary" />
                 </div>
-                
-                {/* Step Number */}
-                <div className="absolute -top-2 -right-2 w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-bold">
-                  {index + 1}
-                </div>
-              </div>
+                <p className="text-sm font-medium text-center">Pick a<br />match</p>
+              </motion.div>
               
-              {/* Content */}
-              <h3 className="text-xl font-semibold mb-3">{step.title}</h3>
-              <p className="text-muted-foreground">{step.description}</p>
+              <motion.div
+                initial={{ opacity: 0, scale: 0.8 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.6, delay: 0.2 }}
+                viewport={{ once: true }}
+                className="flex flex-col items-center gap-3"
+              >
+                <div className="w-16 h-16 rounded-full border-2 border-primary bg-card flex items-center justify-center">
+                  <div className="flex gap-1">
+                    <span className="text-primary font-bold text-sm">YES</span>
+                    <span className="text-primary font-bold text-sm">NO</span>
+                  </div>
+                </div>
+                <p className="text-sm font-medium text-center">Predict<br />YES or NO</p>
+              </motion.div>
+              
+              <motion.div
+                initial={{ opacity: 0, scale: 0.8 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.6, delay: 0.3 }}
+                viewport={{ once: true }}
+                className="flex flex-col items-center gap-3"
+              >
+                <div className="w-16 h-16 rounded-lg border-2 border-primary bg-card flex items-center justify-center">
+                  <Wallet className="w-8 h-8 text-primary" />
+                </div>
+                <p className="text-sm font-medium text-center">Withdraw<br />on-chain</p>
+              </motion.div>
+            </div>
+          </div>
+          
+          {/* Right Side - Features */}
+          <div className="flex flex-col justify-center gap-8">
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.6, delay: 0.4 }}
+              viewport={{ once: true }}
+              className="flex items-center gap-4"
+            >
+              <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                <CheckCircle className="w-6 h-6 text-primary" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-lg">Secure treasury</h3>
+              </div>
             </motion.div>
-          ))}
+            
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.6, delay: 0.5 }}
+              viewport={{ once: true }}
+              className="flex items-center gap-4"
+            >
+              <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                <Shield className="w-6 h-6 text-primary" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-lg">Price by oracles</h3>
+              </div>
+            </motion.div>
+            
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.6, delay: 0.6 }}
+              viewport={{ once: true }}
+              className="flex items-center gap-4"
+            >
+              <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                <FileCheck className="w-6 h-6 text-primary" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-lg">Audited smart contracts</h3>
+              </div>
+            </motion.div>
+            
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.6, delay: 0.7 }}
+              viewport={{ once: true }}
+              className="flex items-center gap-4"
+            >
+              <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                <CheckCircle className="w-6 h-6 text-primary" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-lg">Secure treasury</h3>
+              </div>
+            </motion.div>
+          </div>
         </div>
       </div>
     </div>

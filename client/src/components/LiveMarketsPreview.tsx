@@ -1,102 +1,109 @@
-import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useState, useEffect } from "react";
-import { Link } from "wouter";
+import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Clock } from "lucide-react";
+import { useState, useEffect } from "react";
+import { motion } from "framer-motion";
 
 interface Market {
   id: string;
   league: string;
   match: string;
-  startTime: Date;
-  deadline: Date;
+  countdown: string;
+  label: string;
+  chartData: number[];
 }
 
-// Sample markets for preview
+// Sample markets matching the reference image
 const sampleMarkets: Market[] = [
   {
     id: "1",
-    league: "Premier League",
-    match: "Home FC",
-    startTime: new Date(Date.now() + 4 * 60 * 60 * 1000), // 4h from now
-    deadline: new Date(Date.now() + 3 * 60 * 60 * 1000 + 35 * 60 * 1000) // Closes 25min before start
+    league: "Serie A",
+    match: "Team A vs Team B",
+    countdown: "03:20",
+    label: "H142",
+    chartData: [0.3, 0.4, 0.5, 0.6, 0.7, 0.65, 0.7, 0.75, 0.8]
   },
   {
     id: "2",
     league: "NBA",
-    match: "Lakers vs Heat",
-    startTime: new Date(Date.now() + 4 * 60 * 60 * 1000), // 4h from now
-    deadline: new Date(Date.now() + 3 * 60 * 60 * 1000 + 24 * 60 * 1000) // Closes 36min before start
+    match: "Boston vs Miami",
+    countdown: "02:55",
+    label: "Realtime prices",
+    chartData: [0.5, 0.45, 0.4, 0.5, 0.6, 0.55, 0.6, 0.65, 0.7]
   },
   {
     id: "3",
-    league: "Home FC vs",
-    match: "Away FC",
-    startTime: new Date(Date.now() + 7 * 60 * 60 * 1000), // 7h from now
-    deadline: new Date(Date.now() + 6 * 60 * 60 * 1000 + 1 * 60 * 1000) // Closes 59min before start
-  },
-  {
-    id: "4",
-    league: "UCL Live FC",
-    match: "Home FC vs BC",
-    startTime: new Date(Date.now() + 3 * 60 * 60 * 1000), // 3h from now
-    deadline: new Date(Date.now() + 2 * 60 * 60 * 1000 + 27 * 60 * 1000) // Closes 33min before start
+    league: "La Liga",
+    match: "Team C vs Team D",
+    countdown: "17:10",
+    label: "Pook time prices",
+    chartData: [0.7, 0.65, 0.6, 0.55, 0.5, 0.55, 0.6, 0.65, 0.7]
   }
 ];
 
+function MiniChart({ data }: { data: number[] }) {
+  const width = 120;
+  const height = 40;
+  const max = Math.max(...data);
+  const min = Math.min(...data);
+  const range = max - min || 1;
+  
+  const points = data.map((value, index) => {
+    const x = (index / (data.length - 1)) * width;
+    const y = height - ((value - min) / range) * height;
+    return `${x},${y}`;
+  }).join(' ');
+  
+  return (
+    <svg width={width} height={height} className="opacity-60">
+      <polyline
+        points={points}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        className="text-primary"
+      />
+    </svg>
+  );
+}
+
 function MarketCard({ market }: { market: Market }) {
   const [selectedPrediction, setSelectedPrediction] = useState<"YES" | "NO" | null>(null);
-  const [timeLeft, setTimeLeft] = useState("");
-
-  useEffect(() => {
-    const updateCountdown = () => {
-      const now = new Date().getTime();
-      const distance = market.deadline.getTime() - now;
-      
-      if (distance < 0) {
-        setTimeLeft("Closed");
-        return;
-      }
-      
-      const hours = Math.floor(distance / (1000 * 60 * 60));
-      const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-      
-      setTimeLeft(`${hours}h ${minutes}m`);
-    };
-    
-    updateCountdown();
-    const interval = setInterval(updateCountdown, 60000); // Update every minute
-    
-    return () => clearInterval(interval);
-  }, [market.deadline]);
-
+  
   return (
-    <Card className="p-5 bg-card/80 border border-border/50 hover:border-primary/30 transition-all">
-      <div className="space-y-4">
+    <Card className="p-5 bg-card/50 border-border/50 hover:border-primary/30 transition-all duration-300">
+      <div className="flex flex-col gap-4">
         {/* League Badge */}
-        <Badge variant="secondary" className="text-xs font-medium bg-muted/50">
+        <Badge variant="secondary" className="text-xs font-medium bg-muted/30 w-fit">
           {market.league}
         </Badge>
         
         {/* Match Name */}
-        <h3 className="text-lg font-semibold">{market.match}</h3>
+        <h3 className="text-base font-semibold">{market.match}</h3>
         
-        {/* Start Time */}
-        <div>
-          <p className="text-xs text-muted-foreground/70">Start time</p>
-          <p className="text-sm text-muted-foreground">
-            {market.startTime.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}
-          </p>
+        {/* Countdown and Chart */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-1 text-primary">
+            <Clock className="w-4 h-4" />
+            <span className="text-sm font-medium">{market.countdown}</span>
+          </div>
+          <MiniChart data={market.chartData} />
         </div>
+        
+        {/* Label */}
+        <p className="text-xs text-muted-foreground">{market.label}</p>
+        
+        <p className="text-xs text-muted-foreground/70">H / H</p>
         
         {/* YES/NO Toggle Buttons */}
         <div className="flex gap-3">
           <button
             onClick={() => setSelectedPrediction("YES")}
-            className={`flex-1 py-2 px-4 rounded-md font-semibold text-sm transition-all border ${
+            className={`flex-1 py-2 px-4 rounded-lg border-2 font-medium text-sm transition-all ${
               selectedPrediction === "YES"
-                ? "bg-primary text-primary-foreground border-primary"
-                : "bg-card border-border/50 hover:border-primary/50"
+                ? "border-primary bg-primary/10 text-primary"
+                : "border-border/50 hover:border-primary/50"
             }`}
             data-testid={`button-yes-${market.id}`}
           >
@@ -104,10 +111,10 @@ function MarketCard({ market }: { market: Market }) {
           </button>
           <button
             onClick={() => setSelectedPrediction("NO")}
-            className={`flex-1 py-2 px-4 rounded-md font-semibold text-sm transition-all border ${
+            className={`flex-1 py-2 px-4 rounded-lg border-2 font-medium text-sm transition-all ${
               selectedPrediction === "NO"
-                ? "bg-primary text-primary-foreground border-primary"
-                : "bg-card border-border/50 hover:border-primary/50"
+                ? "border-primary bg-primary/10 text-primary"
+                : "border-border/50 hover:border-primary/50"
             }`}
             data-testid={`button-no-${market.id}`}
           >
@@ -116,19 +123,13 @@ function MarketCard({ market }: { market: Market }) {
         </div>
         
         {/* Predict Button */}
-        <Button 
-          className="w-full" 
-          size="default"
+        <Button
+          className={`w-full ${selectedPrediction ? 'bg-primary hover:bg-primary/90' : 'opacity-50'}`}
           disabled={!selectedPrediction}
           data-testid={`button-predict-${market.id}`}
         >
           Predict
         </Button>
-        
-        {/* Countdown Timer */}
-        <p className="text-xs text-muted-foreground text-center">
-          {timeLeft === "Closed" ? "Market closed" : `Closes in ${timeLeft}`}
-        </p>
       </div>
     </Card>
   );
@@ -136,20 +137,30 @@ function MarketCard({ market }: { market: Market }) {
 
 export function LiveMarketsPreview() {
   return (
-    <div className="py-20 bg-background">
+    <div className="py-16 bg-background">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center mb-10">
-          <h2 className="text-3xl sm:text-4xl font-bold">Live Markets</h2>
-          <Link href="/markets">
-            <Button variant="outline" data-testid="button-view-all-markets">
-              View All
-            </Button>
-          </Link>
-        </div>
+        <motion.h2 
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          viewport={{ once: true }}
+          className="text-4xl font-bold mb-10"
+          data-testid="heading-live-markets"
+        >
+          Live Markets
+        </motion.h2>
         
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {sampleMarkets.map((market) => (
-            <MarketCard key={market.id} market={market} />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {sampleMarkets.map((market, index) => (
+            <motion.div
+              key={market.id}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: index * 0.1 }}
+              viewport={{ once: true }}
+            >
+              <MarketCard market={market} />
+            </motion.div>
           ))}
         </div>
       </div>

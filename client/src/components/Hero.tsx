@@ -1,158 +1,108 @@
 import { Button } from "@/components/ui/button";
-import { FileText, Download, TrendingUp, CheckCircle } from "lucide-react";
+import { Lock, DollarSign, Activity, Coins } from "lucide-react";
 import { Link } from "wouter";
 import { motion } from "framer-motion";
 import { SoccerBall3D } from "./SoccerBall3D";
 
 export function Hero() {
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.15,
-        delayChildren: 0.1
-      }
-    }
-  };
-
-  const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: {
-        duration: 0.6,
-        ease: "easeOut"
-      }
-    }
-  };
-
-  const iconVariants = {
-    hidden: { opacity: 0, scale: 0.8 },
-    visible: (i: number) => ({
-      opacity: 1,
-      scale: 1,
-      transition: {
-        delay: 0.6 + (i * 0.1),
-        duration: 0.5,
-        ease: "easeOut"
-      }
-    })
-  };
-
   return (
-    <div className="relative min-h-screen flex items-center justify-center overflow-hidden bg-background">
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
+    <div className="relative min-h-[90vh] flex items-center justify-center overflow-hidden">
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
           {/* Left Column - Text Content */}
           <motion.div
-            variants={containerVariants}
-            initial="hidden"
-            animate="visible"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
           >
-            <motion.h1 
-              variants={itemVariants}
-              className="text-5xl sm:text-6xl lg:text-7xl font-bold mb-6 leading-tight"
-            >
-              Sports predictions,<br />
-              <span className="text-foreground">on-chain and</span><br />
-              <span className="text-foreground">transparent.</span>
-            </motion.h1>
+            <h1 className="text-5xl sm:text-6xl font-bold mb-6 leading-tight text-primary">
+              Sports predictions, on-chain and transparent
+            </h1>
             
-            <motion.p 
-              variants={itemVariants}
-              className="text-lg sm:text-xl text-muted-foreground mb-10 max-w-xl"
-            >
-              Predict real matches on BNB Chain with decentralized and non-custodial markets.
-            </motion.p>
+            <p className="text-lg text-muted-foreground mb-10 max-w-xl">
+              Predict on your favorite sports with BNBall, a decentralized prediction platform built on BNB Smart Chain.
+            </p>
             
-            <motion.div 
-              variants={itemVariants}
-              className="flex flex-wrap items-center gap-4 mb-12"
-            >
+            <div className="flex flex-wrap items-center gap-4 mb-12">
               <Link href="/markets">
                 <Button 
                   size="lg" 
-                  className="text-base px-8 h-12 bg-primary hover:bg-primary/90"
+                  variant="outline"
+                  className="text-base px-8 h-12 border-primary text-primary hover:bg-primary hover:text-primary-foreground"
                   data-testid="button-start-predicting"
                 >
-                  Start predicting
+                  Start Predicting
                 </Button>
               </Link>
               <Link href="/how-it-works">
                 <Button 
                   size="lg" 
-                  variant="outline" 
-                  className="text-base px-8 h-12"
+                  variant="secondary"
+                  className="text-base px-8 h-12 bg-secondary/50 hover:bg-secondary/70"
                   data-testid="button-how-it-works"
                 >
-                  How it works
+                  How It Works
                 </Button>
               </Link>
-            </motion.div>
+            </div>
             
             {/* Feature Icons */}
-            <motion.div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <motion.div
-                custom={0}
-                variants={iconVariants}
-                initial="hidden"
-                animate="visible"
-                className="flex flex-col items-center gap-3 p-4 rounded-xl bg-card/50 border border-border/50"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.2 }}
+                className="flex flex-col items-center gap-2 p-4 rounded-lg border border-border/50 bg-card/30"
               >
-                <div className="p-3 rounded-lg bg-primary/10">
-                  <FileText className="w-6 h-6 text-primary icon-3d" />
+                <div className="p-2 rounded-lg bg-primary/10">
+                  <Lock className="w-6 h-6 text-primary" />
                 </div>
-                <span className="text-sm font-medium text-center">Non-custodial</span>
+                <span className="text-xs font-medium text-center">Non-custodial</span>
               </motion.div>
               
               <motion.div
-                custom={1}
-                variants={iconVariants}
-                initial="hidden"
-                animate="visible"
-                className="flex flex-col items-center gap-3 p-4 rounded-xl bg-card/50 border border-border/50"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.3 }}
+                className="flex flex-col items-center gap-2 p-4 rounded-lg border border-border/50 bg-card/30"
               >
-                <div className="p-3 rounded-lg bg-primary/10">
-                  <Download className="w-6 h-6 text-primary icon-3d" />
+                <div className="p-2 rounded-lg bg-primary/10">
+                  <DollarSign className="w-6 h-6 text-primary" />
                 </div>
-                <span className="text-sm font-medium text-center">Low fees</span>
+                <span className="text-xs font-medium text-center">Low fees</span>
               </motion.div>
               
               <motion.div
-                custom={2}
-                variants={iconVariants}
-                initial="hidden"
-                animate="visible"
-                className="flex flex-col items-center gap-3 p-4 rounded-xl bg-card/50 border border-border/50"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.4 }}
+                className="flex flex-col items-center gap-2 p-4 rounded-lg border border-border/50 bg-card/30"
               >
-                <div className="p-3 rounded-lg bg-primary/10">
-                  <TrendingUp className="w-6 h-6 text-primary icon-3d" />
+                <div className="p-2 rounded-lg bg-primary/10">
+                  <Activity className="w-6 h-6 text-primary" />
                 </div>
-                <span className="text-sm font-medium text-center">Real-time prices</span>
+                <span className="text-xs font-medium text-center">Real-timeprices</span>
               </motion.div>
               
               <motion.div
-                custom={3}
-                variants={iconVariants}
-                initial="hidden"
-                animate="visible"
-                className="flex flex-col items-center gap-3 p-4 rounded-xl bg-card/50 border border-border/50"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.5 }}
+                className="flex flex-col items-center gap-2 p-4 rounded-lg border border-border/50 bg-card/30"
               >
-                <div className="p-3 rounded-lg bg-primary/10">
-                  <CheckCircle className="w-6 h-6 text-primary icon-3d" />
+                <div className="p-2 rounded-lg bg-primary/10">
+                  <Coins className="w-6 h-6 text-primary" />
                 </div>
-                <span className="text-sm font-medium text-center">On-chain payouts</span>
+                <span className="text-xs font-medium text-center">On-chain payouts</span>
               </motion.div>
-            </motion.div>
+            </div>
           </motion.div>
           
-          {/* Right Column - 3D Soccer Balls */}
+          {/* Right Column - 3D Soccer Ball */}
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.8, delay: 0.3 }}
+            transition={{ duration: 0.8, delay: 0.2 }}
             className="hidden lg:block"
           >
             <SoccerBall3D />
