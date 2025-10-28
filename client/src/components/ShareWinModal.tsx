@@ -44,7 +44,7 @@ export function ShareWinModal({ open, onOpenChange, betId, userAddress }: ShareW
       
       if (response.success) {
         setWinData(response.data);
-        setTweetText(`Just won ${response.data.multiplier.toFixed(2)}x on ${response.data.marketTitle} 🏆\n\nBet: ${response.data.prediction}\nStake: ${(parseFloat(response.data.stakeAmount) / 1e18).toFixed(4)} BNB\n\n#BNBall #DeFi #Crypto`);
+        setTweetText(`Just won ${response.data.multiplier.toFixed(2)}x on ${response.data.marketTitle}\n\nBet: ${response.data.prediction}\nStake: ${(parseFloat(response.data.stakeAmount) / 1e18).toFixed(4)} BNB\n\n#BNBall #DeFi #Crypto`);
       }
     } catch (error: any) {
       toast({

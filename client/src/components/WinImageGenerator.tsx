@@ -90,7 +90,7 @@ export function WinImageGenerator({ data, format = '1:1', onImageGenerated }: Wi
     const badgeY = format === '1:1' ? 150 : 250;
     ctx.font = 'bold 60px Arial, sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('🏆 WINNER! 🏆', width / 2, badgeY);
+    ctx.fillText('WINNER', width / 2, badgeY);
     ctx.shadowBlur = 0;
     
     // Market title

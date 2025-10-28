@@ -21,11 +21,13 @@ Preferred communication style: Simple, everyday language.
 - **Build Tool:** Vite
 
 **Design Approach:**
-- Reference-based design inspired by BNBet, Uniswap/Aave, and modern sports platforms
+- **Brand Identity:** Black, yellow, green, and orange color scheme based on BNBall logo
+- **Visual Style:** Gaming/DeFi hybrid aesthetic with bold colors and modern typography
 - Dual-theme support (light/dark mode) with custom color system
 - Mobile-first responsive design with breakpoints at 768px (tablet) and 1024px (desktop)
 - Typography system using Inter/DM Sans for UI and Space Groto/JetBrains Mono for data
 - Component library based on Radix UI primitives with custom variants
+- No emoji usage per design guidelines (replaced with text and icons)
 
 **Key Pages:**
 - Home (Landing): Hero section with wallet connection and navigation
@@ -33,9 +35,16 @@ Preferred communication style: Simple, everyday language.
 - How It Works: Platform explanation with parallax animations
 - Tokenomics: Dual-token economy details
 - Oracle: Multi-layer verification system explanation
-- Profile: User wallet balance, betting history, and transaction history
+- Profile: User wallet balance, betting history with X/Twitter sharing, and transaction history
 - Leaderboard: User rankings and statistics (planned)
 - Create Market: Form for creating new prediction markets (planned)
+
+**Social Features:**
+- **Win Sharing:** Users can share winning bets to X/Twitter with auto-generated branded images
+- **Image Generation:** HTML5 Canvas-based image generator creates 1:1 or 9:16 format images
+- **Image Branding:** Generated images include BNBall logo watermark, market details, stake, winnings, and multiplier
+- **Custom Tweets:** Users can edit tweet text before posting
+- **Download Option:** Users can download win images for manual sharing
 
 **State Management Philosophy:**
 - Server state managed through React Query with optimistic updates
@@ -62,6 +71,8 @@ Preferred communication style: Simple, everyday language.
 - `GET /api/transactions/:userAddress` - Get transaction history for a wallet
 - `GET /api/markets` - Get all prediction markets
 - `GET /api/markets/:id` - Get specific market details
+- `GET /api/social/win-data/:betId` - Get win data for sharing (market, stake, winnings, multiplier)
+- `POST /api/social/share-to-x` - Post win to X/Twitter with image (requires X API credentials)
 
 **API Design:**
 - RESTful API with `/api` prefix
