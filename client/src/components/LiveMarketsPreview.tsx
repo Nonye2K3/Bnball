@@ -18,29 +18,29 @@ const sampleMarkets: Market[] = [
     id: "1",
     league: "Premier League",
     match: "Home FC",
-    startTime: new Date(Date.now() + 3 * 60 * 60 * 1000 + 35 * 60 * 1000), // 3h 35m from now
-    deadline: new Date(Date.now() + 3 * 60 * 60 * 1000 + 35 * 60 * 1000)
+    startTime: new Date(Date.now() + 4 * 60 * 60 * 1000), // 4h from now
+    deadline: new Date(Date.now() + 3 * 60 * 60 * 1000 + 35 * 60 * 1000) // Closes 25min before start
   },
   {
     id: "2",
     league: "NBA",
     match: "Lakers vs Heat",
-    startTime: new Date(Date.now() + 3 * 60 * 60 * 1000 + 24 * 60 * 1000), // 3h 24m from now
-    deadline: new Date(Date.now() + 3 * 60 * 60 * 1000 + 24 * 60 * 1000)
+    startTime: new Date(Date.now() + 4 * 60 * 60 * 1000), // 4h from now
+    deadline: new Date(Date.now() + 3 * 60 * 60 * 1000 + 24 * 60 * 1000) // Closes 36min before start
   },
   {
     id: "3",
     league: "Home FC vs",
     match: "Away FC",
-    startTime: new Date(Date.now() + 6 * 60 * 60 * 1000 + 1 * 60 * 1000), // 6h 1m from now
-    deadline: new Date(Date.now() + 6 * 60 * 60 * 1000 + 1 * 60 * 1000)
+    startTime: new Date(Date.now() + 7 * 60 * 60 * 1000), // 7h from now
+    deadline: new Date(Date.now() + 6 * 60 * 60 * 1000 + 1 * 60 * 1000) // Closes 59min before start
   },
   {
     id: "4",
     league: "UCL Live FC",
     match: "Home FC vs BC",
-    startTime: new Date(Date.now() + 2 * 60 * 60 * 1000 + 27 * 60 * 1000), // 2h 27m from now
-    deadline: new Date(Date.now() + 2 * 60 * 60 * 1000 + 27 * 60 * 1000)
+    startTime: new Date(Date.now() + 3 * 60 * 60 * 1000), // 3h from now
+    deadline: new Date(Date.now() + 2 * 60 * 60 * 1000 + 27 * 60 * 1000) // Closes 33min before start
   }
 ];
 
@@ -82,7 +82,12 @@ function MarketCard({ market }: { market: Market }) {
         <h3 className="text-lg font-semibold">{market.match}</h3>
         
         {/* Start Time */}
-        <p className="text-sm text-muted-foreground">Start time</p>
+        <div>
+          <p className="text-xs text-muted-foreground/70">Start time</p>
+          <p className="text-sm text-muted-foreground">
+            {market.startTime.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}
+          </p>
+        </div>
         
         {/* YES/NO Toggle Buttons */}
         <div className="flex gap-3">
@@ -122,7 +127,7 @@ function MarketCard({ market }: { market: Market }) {
         
         {/* Countdown Timer */}
         <p className="text-xs text-muted-foreground text-center">
-          Closes in {timeLeft}
+          {timeLeft === "Closed" ? "Market closed" : `Closes in ${timeLeft}`}
         </p>
       </div>
     </Card>
