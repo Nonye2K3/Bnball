@@ -25,23 +25,31 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
-import { TrendingUp, AlertCircle } from "lucide-react";
+import { TrendingUp, AlertCircle, ExternalLink } from "lucide-react";
+import { useCreateMarket } from "@/hooks/usePredictionMarket";
+import { useWeb3 } from "@/hooks/useWeb3";
+import { getExplorerUrl } from "@/lib/contractConfig";
+import { useChainId } from "wagmi";
+import { useEffect } from "react";
 
 const createMarketSchema = z.object({
   title: z.string().min(10, "Title must be at least 10 characters"),
   description: z.string().min(50, "Description must be at least 50 characters"),
   category: z.string().min(1, "Please select a category"),
-  deadline: z.string().min(1, "Please set a deadline"),
+  deadline: z.string().min(1, "Please set a deadline").refine((val) => {
+    const date = new Date(val);
+    return date > new Date();
+  }, "Deadline must be in the future"),
   resolutionMethod: z.string().min(1, "Please select a resolution method"),
-  initialPool: z.string().refine((val) => !isNaN(parseFloat(val)) && parseFloat(val) >= 0.1, {
-    message: "Initial pool must be at least 0.1 BNB",
-  }),
 });
 
 type CreateMarketForm = z.infer<typeof createMarketSchema>;
 
 export default function CreateMarket() {
   const { toast } = useToast();
+  const chainId = useChainId();
+  const { isConnected, connect } = useWeb3();
+  const { createMarket, isLoading, isSuccess, txHash } = useCreateMarket();
   
   const form = useForm<CreateMarketForm>({
     resolver: zodResolver(createMarketSchema),
@@ -50,18 +58,45 @@ export default function CreateMarket() {
       description: "",
       category: "",
       deadline: "",
-      resolutionMethod: "",
-      initialPool: "",
+      resolutionMethod: "hybrid",
     },
   });
 
-  const onSubmit = (data: CreateMarketForm) => {
-    console.log("Market creation data:", data);
-    toast({
-      title: "Market Created! (Demo)",
-      description: "Your prediction market has been created. In production, this would deploy a smart contract to BSC.",
-    });
-    form.reset();
+  useEffect(() => {
+    if (isSuccess && txHash) {
+      toast({
+        title: "Market Created Successfully!",
+        description: (
+          <div className="flex flex-col gap-2">
+            <p>Your prediction market is now live on-chain.</p>
+            <a
+              href={getExplorerUrl(chainId, txHash)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs text-primary hover:underline flex items-center gap-1"
+            >
+              View on BSCScan <ExternalLink className="w-3 h-3" />
+            </a>
+          </div>
+        ),
+      });
+      form.reset();
+    }
+  }, [isSuccess, txHash, chainId, toast, form]);
+
+  const onSubmit = async (data: CreateMarketForm) => {
+    if (!isConnected) {
+      toast({
+        title: "Wallet Not Connected",
+        description: "Please connect your wallet to create a market.",
+        variant: "destructive",
+      });
+      connect();
+      return;
+    }
+
+    const deadline = new Date(data.deadline);
+    await createMarket(data.title, data.description, data.category, deadline);
   };
 
   return (
@@ -201,28 +236,6 @@ export default function CreateMarket() {
                   )}
                 />
 
-                <FormField
-                  control={form.control}
-                  name="initialPool"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Initial Liquidity (BNB)</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          step="0.01"
-                          placeholder="1.0"
-                          {...field}
-                          data-testid="input-initial-pool"
-                        />
-                      </FormControl>
-                      <FormDescription>
-                        Seed the market with initial liquidity (minimum 0.1 BNB)
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
 
                 <div className="flex items-start gap-3 p-4 bg-blue-500/10 border border-blue-500/20 rounded-lg">
                   <AlertCircle className="w-5 h-5 text-blue-500 mt-0.5 flex-shrink-0" />
@@ -242,15 +255,17 @@ export default function CreateMarket() {
                     type="submit"
                     className="flex-1"
                     size="lg"
+                    disabled={isLoading || !isConnected}
                     data-testid="button-create-market"
                   >
-                    Create Market (Demo)
+                    {isLoading ? "Creating Market..." : isConnected ? "Create Market" : "Connect Wallet"}
                   </Button>
                   <Button
                     type="button"
                     variant="outline"
                     size="lg"
                     onClick={() => form.reset()}
+                    disabled={isLoading}
                     data-testid="button-reset"
                   >
                     Reset

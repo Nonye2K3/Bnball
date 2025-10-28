@@ -37,6 +37,13 @@ export function Navbar() {
                 Markets
               </Link>
               <Link 
+                href="/create" 
+                className={`text-sm font-medium hover:text-primary transition-colors ${isActive('/create') ? 'text-primary' : 'text-foreground'}`}
+                data-testid="link-create"
+              >
+                Create Market
+              </Link>
+              <Link 
                 href="/how-it-works" 
                 className={`text-sm font-medium hover:text-primary transition-colors ${isActive('/how-it-works') ? 'text-primary' : 'text-foreground'}`}
                 data-testid="link-how-it-works"
@@ -105,6 +112,13 @@ export function Navbar() {
               onClick={() => setMobileMenuOpen(false)}
             >
               Markets
+            </Link>
+            <Link 
+              href="/create" 
+              className={`block text-sm font-medium hover:text-primary transition-colors py-2 ${isActive('/create') ? 'text-primary' : ''}`}
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              Create Market
             </Link>
             <Link 
               href="/how-it-works" 
