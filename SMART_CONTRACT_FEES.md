@@ -267,14 +267,26 @@ Regardless of chosen option, validate:
 
 ---
 
-## Current Production Status
+## Current Production Status (Updated 2025-10-29)
 
 - **Mainnet Contract**: Deployed at `0xc771cB065CF393a9Bde512714dCBD20C69Af59Ac`
-- **Frontend Config**: Collects 1% off-chain to escrow wallet
-- **User Experience**: Two transactions per bet (1% to escrow + 99% to contract)
+- **Frontend Config**: ✅ Now collects 8% off-chain to escrow wallet
+- **User Experience**: Two transactions per bet (8% to escrow + 92% to contract)
 - **Actual On-Chain Fee**: 0.5% creator fee only
+- **UI Display**: Fees are now HIDDEN from users (automatic deduction without breakdown)
 
-**Decision Required**: User/owner must choose Option 1, 2, or 3 above.
+### ⚠️ NEW REQUIREMENT: 10% Total Fees (8% Platform + 2% Creator)
+
+**User Request**: Achieve 10% total fee split:
+- 8% platform fee → Escrow wallet (off-chain) ✅ **COMPLETED**
+- 2% creator fee → Market creator (on-chain) ❌ **BLOCKED BY CONTRACT**
+
+**Current Implementation**:
+- ✅ 8% platform fee collected off-chain before betting
+- ❌ 0.5% creator fee enforced on-chain (contract hardcoded)
+- ⚠️ Gap: Need 1.5% more creator fee (2% - 0.5% = 1.5%)
+
+**Decision Required**: User/owner must choose Option 1, 2, or 3 above, OR accept current 8.5% total fees (8% platform + 0.5% creator).
 
 ---
 
