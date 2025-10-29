@@ -156,7 +156,7 @@ export default function Markets() {
                 <h1 className="text-3xl font-bold mb-2" data-testid="heading-active-markets">
                   Live Prediction Markets
                 </h1>
-                <p className="text-muted-foreground" data-testid="text-market-count">
+                <div className="text-muted-foreground" data-testid="text-market-count">
                   {isLoadingMarkets ? (
                     <Skeleton className="h-5 w-64" />
                   ) : (
@@ -164,7 +164,7 @@ export default function Markets() {
                       {liveMarketsCount} live • {upcomingMarketsCount} upcoming • {filteredMarkets.length} total markets
                     </>
                   )}
-                </p>
+                </div>
               </div>
               
               <div className="flex items-center gap-3">
