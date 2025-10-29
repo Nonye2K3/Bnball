@@ -44,6 +44,14 @@ export interface IStorage {
   getTransactionsByType(type: string): Promise<Transaction[]>;
   createTransaction(transaction: InsertTransaction): Promise<Transaction>;
   updateTransaction(id: string, transaction: Partial<Transaction>): Promise<Transaction | undefined>;
+  
+  // Platform Statistics
+  getPlatformStats(): Promise<{
+    totalVolume: string;
+    liveMarketsCount: number;
+    activeUsersCount: number;
+    totalPrizePool: string;
+  }>;
 }
 
 export class MemStorage implements IStorage {
@@ -253,6 +261,41 @@ export class MemStorage implements IStorage {
     const updatedTransaction = { ...transaction, ...updates };
     this.transactions.set(id, updatedTransaction);
     return updatedTransaction;
+  }
+  
+  // Platform Statistics
+  async getPlatformStats(): Promise<{
+    totalVolume: string;
+    liveMarketsCount: number;
+    activeUsersCount: number;
+    totalPrizePool: string;
+  }> {
+    const allBets = Array.from(this.bets.values());
+    const allMarkets = Array.from(this.predictionMarkets.values());
+    
+    const totalVolume = allBets.reduce((sum, bet) => {
+      return sum + BigInt(bet.amount);
+    }, BigInt(0));
+    
+    const liveMarketsCount = allMarkets.filter(m => 
+      m.status === 'live' || m.status === 'upcoming'
+    ).length;
+    
+    const uniqueUsers = new Set(allBets.map(bet => bet.userAddress));
+    const activeUsersCount = uniqueUsers.size;
+    
+    const totalPrizePool = allMarkets
+      .filter(m => m.status === 'live' || m.status === 'upcoming')
+      .reduce((sum, market) => {
+        return sum + BigInt(market.totalPool || '0');
+      }, BigInt(0));
+    
+    return {
+      totalVolume: totalVolume.toString(),
+      liveMarketsCount,
+      activeUsersCount,
+      totalPrizePool: totalPrizePool.toString(),
+    };
   }
 }
 

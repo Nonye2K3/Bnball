@@ -600,6 +600,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return handleError(res, error, 'fetch league standings');
     }
   });
+  
+  // GET /api/stats - Get platform statistics (real-time data)
+  app.get("/api/stats", async (req: Request, res: Response) => {
+    try {
+      logRequest('GET', '/api/stats');
+      const stats = await storage.getPlatformStats();
+      return res.json(stats);
+    } catch (error) {
+      return handleError(res, error, 'fetch platform statistics');
+    }
+  });
 
   // GET /api/social/win-data/:betId - Get win data for generating share image
   app.get("/api/social/win-data/:betId", verifyWalletAddress, async (req: Request, res: Response) => {
