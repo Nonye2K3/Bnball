@@ -240,12 +240,12 @@ export default function CreateMarket() {
                 <div className="flex items-start gap-3 p-4 bg-blue-500/10 border border-blue-500/20 rounded-lg">
                   <AlertCircle className="w-5 h-5 text-blue-500 mt-0.5 flex-shrink-0" />
                   <div className="text-sm text-muted-foreground">
-                    <p className="font-semibold text-foreground mb-1">Market Creator Benefits:</p>
+                    <p className="font-semibold text-foreground mb-1">Market Creator Requirements & Benefits:</p>
                     <ul className="space-y-1 text-xs">
+                      <li>• Requires 1.0 BNB stake (refunded when market resolves)</li>
                       <li>• Earn 0.5% fee on all trading volume</li>
-                      <li>• Get your initial liquidity back when market resolves</li>
                       <li>• Build reputation as a trusted market creator</li>
-                      <li>• Requires 10 BNBALL tokens as deposit (refunded after resolution)</li>
+                      <li>• Minimum betting amount for participants: 0.01 BNB</li>
                     </ul>
                   </div>
                 </div>
