@@ -55,11 +55,11 @@ export default function FAQ() {
       questions: [
         {
           q: "What's the difference between BNB and BNBALL?",
-          a: "BNB is the primary betting currency with instant liquidity. BNBALL is our platform utility token offering reduced fees (0.5% vs 2%), governance rights, and staking rewards. You can use either for betting.",
+          a: "BNB is the primary betting currency with instant liquidity. BNBALL is our platform utility token offering reduced platform fees, governance rights, and staking rewards. You can use either for betting.",
         },
         {
           q: "What are the platform fees?",
-          a: "Standard users pay 2% on winnings. BNBALL token holders pay only 0.5%. There are no fees on losing bets. Market creators earn 0.5% of total pool volume as an incentive.",
+          a: "BNBall charges competitive platform fees that are automatically deducted from your bet. BNBALL token holders enjoy reduced fees. Market creators earn a small percentage of the total pool volume as an incentive to create quality markets.",
         },
         {
           q: "How can I earn BNBALL tokens?",

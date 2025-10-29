@@ -237,7 +237,7 @@ export default function Tokenomics() {
               title="BNBALL Token"
               description="Platform utility token with governance rights, staking rewards, and exclusive benefits."
               features={[
-                "Reduced platform fees (0.5% vs 2%)",
+                "Reduced platform fees",
                 "Governance voting on new features",
                 "Stake to earn yield from platform fees"
               ]}
