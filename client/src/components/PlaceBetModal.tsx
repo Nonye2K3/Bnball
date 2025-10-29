@@ -173,31 +173,17 @@ export function PlaceBetModal({ open, onOpenChange, market }: PlaceBetModalProps
         <div className="space-y-4 mt-4">
           <ConfigurationAlert variant="compact" showTitle={false} />
           
-          {/* Two-Step Transaction Indicator */}
-          {(currentStep !== 'idle' || betAmount) && (
+          {/* Transaction Progress Indicator */}
+          {currentStep !== 'idle' && (
             <div className="bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-blue-500/20 p-4 rounded-lg space-y-3">
               <div className="flex items-center justify-between mb-2">
                 <div className="text-xs font-semibold text-blue-600 dark:text-blue-400 flex items-center gap-2">
-                  TWO TRANSACTIONS REQUIRED
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger>
-                        <HelpCircle className="w-3 h-3" />
-                      </TooltipTrigger>
-                      <TooltipContent className="max-w-xs">
-                        <p className="text-xs">
-                          To ensure all bets pay the {TAX_CONFIG.TAX_RATE_PERCENT}% platform tax, 
-                          we collect the tax FIRST, then place your bet. If your bet fails 
-                          after paying the tax, you'll be eligible for a refund.
-                        </p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
+                  PROCESSING YOUR BET
                 </div>
               </div>
               
               <div className="space-y-2">
-                {/* Step 1: Pay Tax */}
+                {/* Step 1: Processing */}
                 <div className={`flex items-center gap-3 p-2 rounded ${
                   currentStep === 'tax' ? 'bg-blue-500/20' : 
                   (currentStep === 'bet' || currentStep === 'complete') ? 'bg-green-500/10' : 
@@ -213,14 +199,14 @@ export function PlaceBetModal({ open, onOpenChange, market }: PlaceBetModalProps
                     )}
                   </div>
                   <div className="flex-1">
-                    <div className="text-xs font-semibold">Step 1/2: Pay Platform Tax</div>
+                    <div className="text-xs font-semibold">Step 1/2: Confirming Transaction</div>
                     <div className="text-xs text-muted-foreground">
-                      Send {betSplit?.tax || '0.00'} BNB ({TAX_CONFIG.TAX_RATE_PERCENT}%) to escrow wallet
+                      Processing your bet...
                     </div>
                   </div>
                 </div>
                 
-                {/* Step 2: Place Bet */}
+                {/* Step 2: Placing Bet */}
                 <div className={`flex items-center gap-3 p-2 rounded ${
                   currentStep === 'bet' ? 'bg-blue-500/20' : 
                   currentStep === 'complete' ? 'bg-green-500/10' : 
@@ -236,9 +222,9 @@ export function PlaceBetModal({ open, onOpenChange, market }: PlaceBetModalProps
                     )}
                   </div>
                   <div className="flex-1">
-                    <div className="text-xs font-semibold">Step 2/2: Place Your Bet</div>
+                    <div className="text-xs font-semibold">Step 2/2: Finalizing Bet</div>
                     <div className="text-xs text-muted-foreground">
-                      Send {betSplit?.pool || '0.00'} BNB ({TAX_CONFIG.BET_POOL_PERCENT}%) to betting pool
+                      Submitting to betting pool...
                     </div>
                   </div>
                 </div>
@@ -334,44 +320,14 @@ export function PlaceBetModal({ open, onOpenChange, market }: PlaceBetModalProps
             </div>
           </div>
 
-          {/* Bet Breakdown */}
+          {/* Bet Summary */}
           {betAmount && parseFloat(betAmount) > 0 && (
-            <div className="bg-blue-500/5 border border-blue-500/20 p-4 rounded-lg space-y-2">
-              <div className="text-xs font-semibold text-blue-600 dark:text-blue-400 mb-2">
-                BET BREAKDOWN
-              </div>
+            <div className="bg-blue-500/5 border border-blue-500/20 p-4 rounded-lg">
               <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Total Bet Amount</span>
-                <span className="font-mono font-semibold" data-testid="text-total-bet">
+                <span className="text-muted-foreground">Your Bet Amount</span>
+                <span className="font-mono font-semibold text-lg" data-testid="text-total-bet">
                   {breakdown.total} BNB
                 </span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">To Market Pool ({TAX_CONFIG.BET_POOL_PERCENT}%)</span>
-                <span className="font-mono text-green-600 dark:text-green-400" data-testid="text-pool-amount">
-                  {breakdown.pool} BNB
-                </span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Platform Tax ({TAX_CONFIG.TAX_RATE_PERCENT}%)</span>
-                <span className="font-mono text-blue-600 dark:text-blue-400" data-testid="text-tax-amount">
-                  {breakdown.tax} BNB
-                </span>
-              </div>
-              <div className="pt-2 border-t border-border">
-                <div className="flex justify-between text-xs">
-                  <span className="text-muted-foreground">Escrow Wallet</span>
-                  <a
-                    href={getAddressExplorerUrl(chainId, ESCROW_WALLET_ADDRESS)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="font-mono text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
-                    data-testid="link-escrow-wallet"
-                  >
-                    {ESCROW_WALLET_ADDRESS.slice(0, 6)}...{ESCROW_WALLET_ADDRESS.slice(-4)}
-                    <ExternalLink className="w-3 h-3" />
-                  </a>
-                </div>
               </div>
             </div>
           )}
@@ -379,7 +335,7 @@ export function PlaceBetModal({ open, onOpenChange, market }: PlaceBetModalProps
           {/* Gas Estimate */}
           <div className="bg-muted/50 p-3 rounded-lg">
             <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Est. Gas Fee (2 transactions)</span>
+              <span className="text-muted-foreground">Est. Gas Fee</span>
               <span className="font-mono text-xs">
                 ~{gasEstimate} BNB
               </span>

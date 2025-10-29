@@ -48,19 +48,19 @@ export function getContractAddress(chainId: number): `0x${string}` {
 export const PREDICTION_MARKET_ABI = PredictionMarketABI.abi
 
 // Escrow wallet configuration
-// This wallet receives 1% tax on all bets placed on the platform
+// This wallet receives platform fee on all bets placed
 export const ESCROW_WALLET_ADDRESS = '0xC196dc762FbC2AB044AAEAc05E27CD10c4982a01' as `0x${string}`
 
-// Tax configuration
+// Tax configuration (fees automatically deducted from bet amount)
 export const TAX_CONFIG = {
-  // Tax rate as a percentage (1%)
-  TAX_RATE_PERCENT: 1,
-  // Tax rate as a decimal for calculations (0.01)
-  TAX_RATE_DECIMAL: 0.01,
-  // Percentage that goes to the bet pool after tax (99%)
-  BET_POOL_PERCENT: 99,
-  // Percentage that goes to the bet pool as decimal (0.99)
-  BET_POOL_DECIMAL: 0.99,
+  // Platform fee rate as a percentage (8%)
+  TAX_RATE_PERCENT: 8,
+  // Platform fee rate as a decimal for calculations (0.08)
+  TAX_RATE_DECIMAL: 0.08,
+  // Percentage that goes to the bet pool after platform fee (92%)
+  BET_POOL_PERCENT: 92,
+  // Percentage that goes to the bet pool as decimal (0.92)
+  BET_POOL_DECIMAL: 0.92,
 } as const
 
 // Betting configuration
