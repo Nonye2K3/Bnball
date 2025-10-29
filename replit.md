@@ -1,83 +1,244 @@
-# Overview
+# BNBall - Sports Prediction Market Platform
 
-This is a Next.js 16 web application built with React and TypeScript, utilizing a comprehensive UI component library based on Radix UI primitives. The project appears to be a modern web application with a focus on user interface components and accessibility. Based on the vercel.json configuration, there are indications of blockchain/Web3 integration with WalletConnect and prediction market smart contracts.
+## Overview
 
-# User Preferences
+BNBall is a decentralized sports prediction market platform built on Binance Smart Chain (BSC). It enables users to create and participate in prediction markets for sports events (NBA, FIFA, NFL, eSports, Boxing) with transparent on-chain settlements. The platform uses a dual-token economy (BNB for betting, BNBALL for governance/utility) and employs multiple verification methods including Chainlink oracles, AI verification, and community governance for result determination.
+
+## User Preferences
 
 Preferred communication style: Simple, everyday language.
 
-# System Architecture
+## System Architecture
 
-## Frontend Architecture
+### Frontend Architecture
 
-**Framework**: Next.js 16.0.0 with React
-- **Rationale**: Next.js provides server-side rendering, static site generation, and API routes in a single framework
-- **Benefits**: Improved SEO, faster initial page loads, and simplified full-stack development
+**Technology Stack:**
+- **Framework:** React 18 with TypeScript
+- **Routing:** Wouter (lightweight client-side routing)
+- **Styling:** Tailwind CSS with custom design system (shadcn/ui components)
+- **State Management:** TanStack Query (React Query) for server state
+- **Form Handling:** React Hook Form with Zod validation
+- **Build Tool:** Vite
 
-**UI Component System**: Radix UI + Custom Component Library
-- **Component primitives**: Extensive use of Radix UI components (accordion, dialog, dropdown, select, toast, etc.)
-- **Styling approach**: Tailwind CSS (via autoprefixer) with class-variance-authority for component variants
-- **Theming**: next-themes for dark/light mode support
-- **Icons**: lucide-react for consistent iconography
-- **Rationale**: Radix UI provides unstyled, accessible components that can be customized while maintaining WCAG compliance
-- **Benefits**: Accessibility built-in, full design control, reduced development time
+**Design Approach:**
+- **Brand Identity:** Black, yellow, green, and orange color scheme based on BNBall logo
+- **Visual Style:** Gaming/DeFi hybrid aesthetic with bold colors and modern typography
+- Dual-theme support (light/dark mode) with custom color system
+- Mobile-first responsive design with breakpoints at 768px (tablet) and 1024px (desktop)
+- Typography system using Inter/DM Sans for UI and Space Groto/JetBrains Mono for data
+- Component library based on Radix UI primitives with custom variants
+- No emoji usage per design guidelines (replaced with text and icons)
 
-**Form Management**: React Hook Form with resolvers
-- **Rationale**: Performant form handling with minimal re-renders
-- **Benefits**: Built-in validation, TypeScript support, smaller bundle size
+**Key Pages:**
+- Home (Landing): Redesigned to match reference with Hero (3D soccer balls, feature cards), Live Markets preview (chart visualizations, YES/NO toggles), How It Works (left-aligned steps), and Footer
+- Markets: Live prediction markets with betting interface
+- How It Works: Platform explanation with parallax animations
+- Tokenomics: Dual-token economy details
+- Oracle: Multi-layer verification system explanation
+- Profile: User wallet balance, betting history with X/Twitter sharing, and transaction history
+- Leaderboard: User rankings and statistics (planned)
+- Create Market: Form for creating new prediction markets (planned)
 
-**Additional UI Libraries**:
-- cmdk for command palette/search functionality
-- embla-carousel-react for carousel components
-- input-otp for one-time password inputs
-- date-fns for date manipulation
+**Homepage Redesign (Latest):**
+- **Navbar:** Simplified with Markets, How It Works, Whitepaper links + Connect Wallet button
+- **Hero Section:** Green heading "Sports predictions, on-chain and transparent", exact subtitle, two CTAs (Start Predicting, How It Works), four feature cards (Non-custodial, Low fees, Real-time prices, On-chain payouts), 3D interactive soccer balls with Binance logo (gracefully degrades in headless browsers)
+- **Live Markets Preview:** Three market cards with league badges, countdown timers, mini chart visualizations, exact labels (H142, Realtime prices, Pook time prices, H/H), YES/NO toggle buttons, Predict button
+- **How It Works:** Left-aligned three steps (Pick a match, Predict YES or NO, Withdraw on-chain) with right-aligned bullet points (Price by oracles, Audited smart contracts, Secure treasury)
+- **Footer:** Learn section (Whitepaper, FAQ), Community section (Twitter, Telegram), social icons, "Play responsibly" text
+- **3D Elements:** Three.js integration with error handling for WebGL compatibility
+- **Light/Dark Mode:** Full support with black background (dark) and white/light gray background (light), yellow/green/orange accents maintained across both themes
 
-## Deployment & Hosting
+**Social Features:**
+- **Win Sharing:** Users can share winning bets to X/Twitter with auto-generated branded images
+- **Image Generation:** HTML5 Canvas-based image generator creates 1:1 or 9:16 format images
+- **Image Branding:** Generated images include BNBall logo watermark, market details, stake, winnings, and multiplier
+- **Custom Tweets:** Users can edit tweet text before posting
+- **Download Option:** Users can download win images for manual sharing
 
-**Platform**: Vercel
-- **Build configuration**: Custom build command with static output to `dist/public`
-- **Routing strategy**: API routes proxied to `/api`, all other routes serve static content
-- **Framework mode**: Configured as "other" (non-standard Next.js deployment)
+**State Management Philosophy:**
+- Server state managed through React Query with optimistic updates
+- Local UI state managed through React hooks
+- No global state management library (Redux/Zustand) - keeping it simple with component state and context
 
-## Environment Configuration
+### Backend Architecture
 
-**Session Management**: Uses SESSION_SECRET environment variable for secure session handling
+**Technology Stack:**
+- **Runtime:** Node.js with Express.js
+- **Language:** TypeScript with ES modules
+- **Database ORM:** Drizzle ORM
+- **Session Management:** express-session with connect-pg-simple
 
-**Web3 Integration**:
-- WalletConnect Project ID configured for wallet connectivity
-- Prediction Market smart contract deployed on testnet at `0xc771cB065CF393a9Bde512714dCBD20C69Af59Ac`
-- **Rationale**: Enables decentralized application features with wallet-based authentication
+**Current Implementation:**
+- In-memory storage implementation (MemStorage) for development
+- RESTful API routes for bets, transactions, and markets
+- Prepared for PostgreSQL migration (Drizzle config present)
 
-## Development Workflow
+**API Endpoints:**
+- `POST /api/bets` - Create new bet record after on-chain confirmation
+- `GET /api/bets/:userAddress` - Get betting history for a wallet
+- `POST /api/transactions` - Create transaction record
+- `GET /api/transactions/:userAddress` - Get transaction history for a wallet
+- `GET /api/markets` - Get all prediction markets
+- `GET /api/markets/:id` - Get specific market details
+- `GET /api/social/win-data/:betId` - Get win data for sharing (market, stake, winnings, multiplier)
+- `POST /api/social/share-to-x` - Post win to X/Twitter with image (requires X API credentials)
 
-**Analytics**: Vercel Analytics integration for tracking user behavior and performance metrics
+**API Design:**
+- RESTful API with `/api` prefix
+- JSON request/response format
+- Request validation using Zod schemas
+- Request logging middleware for debugging
+- Raw body capture for webhook verification
+- Duplicate transaction prevention using transaction hash checks
 
-**Code Quality**: ESLint configuration with Semgrep security rules
-- Includes security scanning for sensitive parameter handling (particularly for Bicep/Azure deployments)
-- Focus on preventing credential leakage in logs and configuration files
+**Architecture Decisions:**
+1. **Problem:** Need flexible data persistence strategy
+   - **Solution:** Storage interface pattern (IStorage) allowing easy switching between implementations
+   - **Rationale:** Enables development with in-memory storage, production with PostgreSQL, and future database migrations
 
-# External Dependencies
+2. **Problem:** Session management for Web3 wallet connections
+   - **Solution:** PostgreSQL-backed sessions via connect-pg-simple
+   - **Rationale:** Persistent sessions across server restarts, scalable for production
 
-## UI & Component Libraries
-- **Radix UI**: Complete suite of accessible UI primitives (26+ component packages)
-- **Tailwind CSS**: Utility-first CSS framework via autoprefixer
-- **Lucide React**: Icon library
-- **next-themes**: Theme management system
+### Database Schema
 
-## Web3/Blockchain
-- **WalletConnect**: Web3 wallet connection protocol (Project ID: d2d2839b983c4f6d3f6cb0c1ac366e08)
-- **Smart Contracts**: Prediction market contract on testnet (Ethereum-compatible chain)
+**ORM Choice:** Drizzle ORM
+- **Rationale:** Type-safe, lightweight, SQL-like query builder with excellent TypeScript integration
+- **Dialect:** PostgreSQL (via @neondatabase/serverless for Neon DB support)
 
-## Analytics & Monitoring
-- **Vercel Analytics**: Performance and user behavior tracking
+**Core Tables:**
 
-## Development Tools
-- **ESLint**: Code linting and quality enforcement
-- **Semgrep**: Security scanning with custom rules for Azure/Bicep deployments
+1. **users**
+   - Authentication and user identity
+   - Fields: id (UUID), username (unique), password (hashed)
 
-## Utility Libraries
-- **clsx & class-variance-authority**: Conditional CSS class management
-- **date-fns**: Date manipulation and formatting
-- **cmdk**: Command menu implementation
-- **embla-carousel-react**: Carousel functionality
-- **input-otp**: OTP input handling
+2. **prediction_markets**
+   - Sports prediction market definitions
+   - Fields: id, title, description, category, status (live/upcoming/completed)
+   - Betting data: totalPool, yesOdds, noOdds, participants
+   - Timeline: startTime, deadline
+   - Resolution: resolutionMethod, result, resolutionData
+
+3. **bets**
+   - User betting records linked to blockchain transactions
+   - Fields: id, userAddress (wallet), marketId, prediction (true/false), amount (wei as string), transactionHash, timestamp
+
+4. **transactions**
+   - Blockchain transaction history
+   - Fields: id, userAddress, type (place_bet/claim_winnings/create_market), transactionHash, value (wei as string), status, timestamp, metadata
+
+**Schema Philosophy:**
+- UUID primary keys for distributed system compatibility
+- Wei amounts stored as strings to preserve precision (converted with BigInt + formatEther for display)
+- Transaction hashes for blockchain verification and BSCScan links
+- Text fields for flexible resolution data (JSON storage for oracle responses)
+- Status tracking for market lifecycle and transaction states
+
+### Authentication & Authorization
+
+**Current State:** Web3 wallet authentication fully implemented
+
+**Implementation:**
+- Web3 wallet-based authentication using wagmi v2 and @web3modal/wagmi
+- Support for MetaMask, WalletConnect, Coinbase Wallet, and other injected wallets
+- Session-based state management for connected wallets
+- Binance Smart Chain Mainnet (Chain ID: 56) and Testnet (Chain ID: 97) support
+- No traditional password authentication - purely wallet-based
+
+### Smart Contract Integration
+
+**Blockchain:** Binance Smart Chain
+- **Tokens:** BNB (native), BNBALL (custom token)
+- **Resolution Methods:** 
+  - Chainlink Sports Oracle for real-time sports data
+  - AI verification for complex scenarios
+  - Community governance voting for disputes
+
+**Smart Contract Deployment (Latest):**
+- ✅ **PredictionMarket.sol** - Production-ready Solidity contract deployed
+- ✅ **Hardhat Infrastructure** - Full deployment toolchain configured for BSC Mainnet/Testnet
+- ✅ **Security Audited** - All critical vulnerabilities fixed:
+  - Removed owner drain function
+  - Tracks actual stake amounts per market
+  - Uses call() instead of transfer() for smart contract wallet compatibility
+  - Handles zero-winner edge case with proportional refunds
+  - Follows checks-effects-interactions pattern to prevent reentrancy
+- ✅ **Contract Features:**
+  - createMarket: Requires 1.0 BNB stake (refunded after resolution)
+  - placeBet: Minimum 0.5 BNB, prevents double-betting
+  - resolveMarket: Owner-only, pays 0.5% creator fee + refunds stake
+  - claimWinnings: Proportional payouts, handles zero-winner scenarios
+  - View functions: getMarketDetails, getUserBets, getUserBetInMarket
+
+**Deployment Infrastructure:**
+- **Hardhat** - Solidity compilation and deployment framework
+- **Scripts:** Automated deployment script with balance checks and verification
+- **Configuration:** BSC Mainnet (Chain ID 56) and Testnet (Chain ID 97)
+- **Verification:** BSCScan integration for contract source code verification
+- **Documentation:** Comprehensive DEPLOYMENT.md guide with step-by-step instructions
+
+**Implementation:**
+- Complete smart contract interaction layer with wagmi hooks
+- PredictionMarket contract ABI with functions: placeBet, claimWinnings, createMarket, resolveMarket
+- 0.5 BNB minimum bet enforcement (validated before transaction)
+- Gas estimation with 20% buffer for transaction reliability
+- Transaction confirmation with real-time status updates
+- BSCScan integration for transaction viewing
+- Bet and transaction persistence to database after on-chain confirmation
+
+**Integration Points:**
+- Escrow wallet for 1% platform tax collection
+- Market creation requires exact stake payment (1.0 BNB)
+- Creator fee distribution (0.5% of total pool)
+- Dispute resolution mechanism (centralized owner control - future: DAO governance)
+
+## External Dependencies
+
+### Third-Party Services
+
+**Blockchain Infrastructure:**
+- Binance Smart Chain RPC nodes
+- WalletConnect for wallet connections
+- Neon Database (PostgreSQL provider via @neondatabase/serverless)
+
+**Oracle Services (Planned):**
+- Chainlink Sports Data Feeds
+- Custom AI verification system
+- Community governance contracts
+
+**Development Tools:**
+- Replit-specific plugins (@replit/vite-plugin-runtime-error-modal, cartographer, dev-banner)
+- Vite for development server and bundling
+
+### UI Component Libraries
+
+**Core:**
+- Radix UI primitives (17+ component packages for accessible, unstyled components)
+- shadcn/ui design system (custom-configured with "new-york" style)
+- Tailwind CSS for utility-first styling
+- class-variance-authority for component variants
+
+**Additional:**
+- date-fns for date formatting
+- embla-carousel-react for carousels
+- lucide-react for icons
+- cmdk for command palette
+
+### Build & Development
+
+**Package Manager:** npm
+**TypeScript Configuration:**
+- Strict mode enabled
+- ESNext module system
+- Path aliases: @/ for client, @shared/ for shared code
+
+**Scripts:**
+- `dev`: Development server with tsx watch mode
+- `build`: Vite build + esbuild for server bundling
+- `start`: Production server
+- `db:push`: Drizzle schema migration
+
+**Deployment Strategy:**
+- Client: Vite builds to dist/public
+- Server: esbuild bundles to dist/index.js
+- Single-server deployment with static file serving

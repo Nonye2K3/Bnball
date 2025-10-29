@@ -1,0 +1,528 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* LIGHT MODE */
+:root {
+  --button-outline: rgba(0,0,0, .10);
+  --badge-outline: rgba(0,0,0, .05);
+
+  /* Automatic computation of border around primary / danger buttons */
+  --opaque-button-border-intensity: -8; /* In terms of percentages */
+
+  /* Backgrounds applied on top of other backgrounds when hovered/active */
+  --elevate-1: rgba(0,0,0, .03);
+  --elevate-2: rgba(0,0,0, .08);
+
+  /* BNBall Light Mode Colors - Yellow, Green, Orange on Light Gray */
+  --background: 0 0% 98%;
+
+  --foreground: 0 0% 5%;
+
+  --border: 0 0% 88%;
+
+  --card: 0 0% 100%;
+
+  --card-foreground: 0 0% 5%;
+
+  --card-border: 0 0% 92%;
+
+  --sidebar: 0 0% 96%;
+
+  --sidebar-foreground: 0 0% 5%;
+
+  --sidebar-border: 0 0% 90%;
+
+  /* Yellow/Gold Primary */
+  --sidebar-primary: 45 100% 50%;
+
+  --sidebar-primary-foreground: 0 0% 0%;
+
+  --sidebar-accent: 0 0% 92%;
+
+  --sidebar-accent-foreground: 0 0% 10%;
+
+  --sidebar-ring: 45 100% 45%;
+
+  --popover: 0 0% 100%;
+
+  --popover-foreground: 0 0% 5%;
+
+  --popover-border: 0 0% 90%;
+
+  /* Yellow/Gold Primary */
+  --primary: 45 100% 50%;
+
+  --primary-foreground: 0 0% 0%;
+
+  /* Green Secondary */
+  --secondary: 142 100% 45%;
+
+  --secondary-foreground: 0 0% 100%;
+
+  --muted: 0 0% 94%;
+
+  --muted-foreground: 0 0% 40%;
+
+  /* Orange Accent */
+  --accent: 14 100% 60%;
+
+  --accent-foreground: 0 0% 100%;
+
+  --destructive: 0 84% 48%;
+
+  --destructive-foreground: 0 10% 98%;
+
+  --input: 0 0% 88%;
+  --ring: 45 100% 45%;
+  
+  /* Charts - Yellow, Green, Orange palette */
+  --chart-1: 45 100% 50%;
+  --chart-2: 142 100% 45%;
+  --chart-3: 14 100% 60%;
+  --chart-4: 120 60% 50%;
+  --chart-5: 30 100% 55%;
+
+  --font-sans: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-serif: Georgia, serif;
+  --font-mono: "JetBrains Mono", "Space Grotesk", Menlo, monospace;
+  --radius: .5rem; /* 8px */
+  --shadow-2xs: 0px 1px 2px 0px hsl(210 12% 16% / 0.05);
+  --shadow-xs: 0px 1px 3px 0px hsl(210 12% 16% / 0.08);
+  --shadow-sm: 0px 2px 4px 0px hsl(210 12% 16% / 0.06), 0px 1px 2px -1px hsl(210 12% 16% / 0.08);
+  --shadow: 0px 4px 6px 0px hsl(210 12% 16% / 0.04), 0px 2px 4px -1px hsl(210 12% 16% / 0.06);
+  --shadow-md: 0px 6px 12px 0px hsl(210 12% 16% / 0.06), 0px 2px 6px -2px hsl(210 12% 16% / 0.08);
+  --shadow-lg: 0px 10px 20px 0px hsl(210 12% 16% / 0.08), 0px 4px 8px -2px hsl(210 12% 16% / 0.10);
+  --shadow-xl: 0px 20px 30px 0px hsl(210 12% 16% / 0.10), 0px 8px 12px -4px hsl(210 12% 16% / 0.12);
+  --shadow-2xl: 0px 25px 50px 0px hsl(210 12% 16% / 0.15);
+  --tracking-normal: 0em;
+  --spacing: 0.25rem;
+  
+  /* 3D Effect Variables - Enhanced for Gaming Look */
+  --shadow-3d: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 
+               0 2px 4px -1px rgba(0, 0, 0, 0.15),
+               0 10px 15px -3px rgba(0, 0, 0, 0.2),
+               inset 0 2px 0 0 rgba(255, 255, 255, 0.1);
+  --shadow-3d-hover: 0 8px 12px -2px rgba(0, 0, 0, 0.35), 
+                     0 4px 8px -2px rgba(0, 0, 0, 0.2),
+                     0 18px 28px -5px rgba(0, 0, 0, 0.25),
+                     inset 0 2px 0 0 rgba(255, 255, 255, 0.15);
+  --shadow-3d-active: 0 1px 2px -1px rgba(0, 0, 0, 0.2), 
+                      0 1px 2px -1px rgba(0, 0, 0, 0.12),
+                      0 3px 6px -3px rgba(0, 0, 0, 0.15),
+                      inset 0 1px 0 0 rgba(0, 0, 0, 0.1);
+
+  /* BNBall Glow Effects for Yellow/Green/Orange */
+  --glow-yellow: 0 0 20px rgba(255, 215, 0, 0.3);
+  --glow-green: 0 0 20px rgba(16, 185, 129, 0.3);
+  --glow-orange: 0 0 20px rgba(255, 107, 53, 0.3);
+
+  /* Automatically computed borders - intensity can be controlled by the user by the --opaque-button-border-intensity setting */
+
+  /* Fallback for older browsers */
+  --sidebar-primary-border: hsl(var(--sidebar-primary));
+  --sidebar-primary-border: hsl(from hsl(var(--sidebar-primary)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
+
+  /* Fallback for older browsers */
+  --sidebar-accent-border: hsl(var(--sidebar-accent));
+  --sidebar-accent-border: hsl(from hsl(var(--sidebar-accent)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
+
+  /* Fallback for older browsers */
+  --primary-border: hsl(var(--primary));
+  --primary-border: hsl(from hsl(var(--primary)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
+
+  /* Fallback for older browsers */
+  --secondary-border: hsl(var(--secondary));
+  --secondary-border: hsl(from hsl(var(--secondary)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
+
+  /* Fallback for older browsers */
+  --muted-border: hsl(var(--muted));
+  --muted-border: hsl(from hsl(var(--muted)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
+
+  /* Fallback for older browsers */
+  --accent-border: hsl(var(--accent));
+  --accent-border: hsl(from hsl(var(--accent)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
+
+  /* Fallback for older browsers */
+  --destructive-border: hsl(var(--destructive));
+  --destructive-border: hsl(from hsl(var(--destructive)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
+}
+
+/* DARK MODE - BNBall Black, Yellow, Green, Orange */
+.dark {
+  --button-outline: rgba(255,255,255, .10);
+  --badge-outline: rgba(255,255,255, .05);
+
+  --opaque-button-border-intensity: 9;  /* In terms of percentages */
+
+  /* Backgrounds applied on top of other backgrounds when hovered/active */
+  --elevate-1: rgba(255,215,0, .08);
+  --elevate-2: rgba(255,215,0, .15);
+
+  /* Pure Black Background */
+  --background: 0 0% 0%;
+
+  --foreground: 0 0% 98%;
+
+  /* Dark gray borders for subtle separation */
+  --border: 0 0% 15%;
+
+  /* Slightly elevated black for cards */
+  --card: 0 0% 7%;
+
+  --card-foreground: 0 0% 98%;
+
+  --card-border: 0 0% 12%;
+
+  --sidebar: 0 0% 5%;
+
+  --sidebar-foreground: 0 0% 98%;
+
+  --sidebar-border: 0 0% 12%;
+
+  /* Yellow/Gold Primary */
+  --sidebar-primary: 45 100% 55%;
+
+  --sidebar-primary-foreground: 0 0% 0%;
+
+  --sidebar-accent: 0 0% 10%;
+
+  --sidebar-accent-foreground: 0 0% 95%;
+
+  --sidebar-ring: 45 100% 50%;
+
+  --popover: 0 0% 8%;
+
+  --popover-foreground: 0 0% 98%;
+
+  --popover-border: 0 0% 15%;
+
+  /* Yellow/Gold Primary */
+  --primary: 45 100% 55%;
+
+  --primary-foreground: 0 0% 0%;
+
+  /* Green Secondary */
+  --secondary: 142 80% 45%;
+
+  --secondary-foreground: 0 0% 100%;
+
+  --muted: 0 0% 12%;
+
+  --muted-foreground: 0 0% 60%;
+
+  /* Orange Accent */
+  --accent: 14 100% 62%;
+
+  --accent-foreground: 0 0% 0%;
+
+  --destructive: 0 84% 52%;
+
+  --destructive-foreground: 0 10% 98%;
+
+  --input: 0 0% 18%;
+  --ring: 45 100% 50%;
+  
+  /* Charts - Yellow, Green, Orange palette */
+  --chart-1: 45 100% 55%;
+  --chart-2: 142 80% 50%;
+  --chart-3: 14 100% 65%;
+  --chart-4: 120 70% 55%;
+  --chart-5: 30 100% 60%;
+
+  --shadow-2xs: 0px 1px 2px 0px hsl(0 0% 0% / 0.25);
+  --shadow-xs: 0px 1px 3px 0px hsl(0 0% 0% / 0.30);
+  --shadow-sm: 0px 2px 4px 0px hsl(0 0% 0% / 0.28), 0px 1px 2px -1px hsl(0 0% 0% / 0.32);
+  --shadow: 0px 4px 6px 0px hsl(0 0% 0% / 0.25), 0px 2px 4px -1px hsl(0 0% 0% / 0.28);
+  --shadow-md: 0px 6px 12px 0px hsl(0 0% 0% / 0.30), 0px 2px 6px -2px hsl(0 0% 0% / 0.35);
+  --shadow-lg: 0px 10px 20px 0px hsl(0 0% 0% / 0.35), 0px 4px 8px -2px hsl(0 0% 0% / 0.40);
+  --shadow-xl: 0px 20px 30px 0px hsl(0 0% 0% / 0.40), 0px 8px 12px -4px hsl(0 0% 0% / 0.45);
+  --shadow-2xl: 0px 25px 50px 0px hsl(0 0% 0% / 0.50);
+
+  /* Enhanced glow effects on dark background - More dramatic for 3D */
+  --glow-yellow: 0 0 20px rgba(255, 215, 0, 0.6), 
+                 0 0 40px rgba(255, 215, 0, 0.3),
+                 0 4px 12px rgba(0, 0, 0, 0.3);
+  --glow-green: 0 0 20px rgba(16, 185, 129, 0.6), 
+                0 0 40px rgba(16, 185, 129, 0.3),
+                0 4px 12px rgba(0, 0, 0, 0.3);
+  --glow-orange: 0 0 20px rgba(255, 107, 53, 0.6), 
+                 0 0 40px rgba(255, 107, 53, 0.3),
+                 0 4px 12px rgba(0, 0, 0, 0.3);
+  
+  /* 3D Shadow variables for dark mode */
+  --shadow-3d: 0 6px 10px -1px rgba(0, 0, 0, 0.5), 
+               0 4px 6px -1px rgba(0, 0, 0, 0.3),
+               0 12px 20px -3px rgba(0, 0, 0, 0.4),
+               inset 0 2px 0 0 rgba(255, 215, 0, 0.15);
+  --shadow-3d-hover: 0 12px 18px -2px rgba(0, 0, 0, 0.6), 
+                     0 6px 10px -2px rgba(0, 0, 0, 0.4),
+                     0 20px 35px -5px rgba(0, 0, 0, 0.5),
+                     inset 0 2px 0 0 rgba(255, 215, 0, 0.2);
+  --shadow-3d-active: 0 2px 4px -1px rgba(0, 0, 0, 0.4), 
+                      0 1px 3px -1px rgba(0, 0, 0, 0.25),
+                      0 4px 8px -3px rgba(0, 0, 0, 0.3),
+                      inset 0 1px 0 0 rgba(0, 0, 0, 0.2);
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  
+  body {
+    @apply font-sans antialiased bg-background text-foreground;
+    background: linear-gradient(
+      135deg,
+      hsl(var(--background)) 0%,
+      hsl(var(--background)) 50%,
+      color-mix(in srgb, hsl(var(--background)) 95%, hsl(45 100% 50%)) 100%
+    );
+    background-attachment: fixed;
+  }
+  
+  .dark body {
+    background: 
+      radial-gradient(ellipse at top left, rgba(255, 215, 0, 0.05) 0%, transparent 50%),
+      radial-gradient(ellipse at top right, rgba(16, 185, 129, 0.05) 0%, transparent 50%),
+      radial-gradient(ellipse at bottom center, rgba(255, 107, 53, 0.05) 0%, transparent 60%),
+      hsl(var(--background));
+    background-attachment: fixed;
+  }
+}
+
+/**
+ * Using the elevate system.
+ * Automatic contrast adjustment.
+ *
+ * <element className="hover-elevate" />
+ * <element className="active-elevate-2" />
+ *
+ * // Using the tailwind utility when a data attribute is "on"
+ * <element className="toggle-elevate data-[state=on]:toggle-elevated" />
+ * // Or manually controlling the toggle state
+ * <element className="toggle-elevate toggle-elevated" />
+ *
+ * Elevation systems have to handle many states.
+ * - not-hovered, vs. hovered vs. active  (three mutually exclusive states)
+ * - toggled or not
+ * - focused or not (this is not handled with these utilities)
+ *
+ * Even without handling focused or not, this is six possible combinations that
+ * need to be distinguished from eachother visually.
+ */
+@layer utilities {
+
+  /* Hide ugly search cancel button in Chrome until we can style it properly */
+  input[type="search"]::-webkit-search-cancel-button {
+    @apply hidden;
+  }
+
+  /* Placeholder styling for contentEditable div */
+  [contenteditable][data-placeholder]:empty::before {
+    content: attr(data-placeholder);
+    color: hsl(var(--muted-foreground));
+    pointer-events: none;
+  }
+
+  /* .no-default-hover-elevate/no-default-active-elevate is an escape hatch so consumers of
+   * buttons/badges can remove the automatic brightness adjustment on interactions
+   * and program their own. */
+  .no-default-hover-elevate {}
+
+  .no-default-active-elevate {}
+
+
+  /**
+   * Toggleable backgrounds go behind the content. Hoverable/active goes on top.
+   * This way they can stack/compound. Both will overlap the parent's borders!
+   * So borders will be automatically adjusted both on toggle, and hover/active,
+   * and they will be compounded.
+   */
+  .toggle-elevate::before,
+  .toggle-elevate-2::before {
+    content: "";
+    pointer-events: none;
+    position: absolute;
+    inset: 0px;
+    /*border-radius: inherit;   match rounded corners */
+    border-radius: inherit;
+    z-index: -1;
+    /* sits behind content but above backdrop */
+  }
+
+  .toggle-elevate.toggle-elevated::before {
+    background-color: var(--elevate-2);
+  }
+
+  /* If there's a 1px border, adjust the inset so that it covers that parent's border */
+  .border.toggle-elevate::before {
+    inset: -1px;
+  }
+
+  /* Does not work on elements with overflow:hidden! */
+  .hover-elevate:not(.no-default-hover-elevate),
+  .active-elevate:not(.no-default-active-elevate),
+  .hover-elevate-2:not(.no-default-hover-elevate),
+  .active-elevate-2:not(.no-default-active-elevate) {
+    position: relative;
+    z-index: 0;
+  }
+
+  .hover-elevate:not(.no-default-hover-elevate)::after,
+  .active-elevate:not(.no-default-active-elevate)::after,
+  .hover-elevate-2:not(.no-default-hover-elevate)::after,
+  .active-elevate-2:not(.no-default-active-elevate)::after {
+    content: "";
+    pointer-events: none;
+    position: absolute;
+    inset: 0px;
+    /*border-radius: inherit;   match rounded corners */
+    border-radius: inherit;
+    z-index: 999;
+    /* sits in front of content */
+  }
+
+  .hover-elevate:hover:not(.no-default-hover-elevate)::after,
+  .active-elevate:active:not(.no-default-active-elevate)::after {
+    background-color: var(--elevate-1);
+  }
+
+  .hover-elevate-2:hover:not(.no-default-hover-elevate)::after,
+  .active-elevate-2:active:not(.no-default-active-elevate)::after {
+    background-color: var(--elevate-2);
+  }
+
+  /* If there's a 1px border, adjust the inset so that it covers that parent's border */
+  .border.hover-elevate:not(.no-hover-interaction-elevate)::after,
+  .border.active-elevate:not(.no-active-interaction-elevate)::after,
+  .border.hover-elevate-2:not(.no-hover-interaction-elevate)::after,
+  .border.active-elevate-2:not(.no-active-interaction-elevate)::after,
+  .border.hover-elevate:not(.no-hover-interaction-elevate)::after {
+    inset: -1px;
+  }
+}
+
+/* 3D Icon Styles with Yellow/Green/Orange glow - Enhanced */
+@layer utilities {
+  .icon-3d {
+    filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.25)) 
+            drop-shadow(0 6px 12px rgba(0, 0, 0, 0.15))
+            drop-shadow(0 1px 0 rgba(255, 255, 255, 0.1));
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  .icon-3d:hover {
+    filter: drop-shadow(0 6px 10px rgba(255, 215, 0, 0.5)) 
+            drop-shadow(0 10px 20px rgba(255, 215, 0, 0.3))
+            drop-shadow(0 2px 0 rgba(255, 215, 0, 0.2));
+    transform: translateY(-3px);
+  }
+  
+  .icon-3d:active {
+    filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.2)) 
+            drop-shadow(0 3px 6px rgba(0, 0, 0, 0.15));
+    transform: translateY(0);
+  }
+
+  /* Color-specific glows */
+  .glow-yellow {
+    box-shadow: var(--glow-yellow);
+  }
+
+  .glow-green {
+    box-shadow: var(--glow-green);
+  }
+
+  .glow-orange {
+    box-shadow: var(--glow-orange);
+  }
+  
+  /* 3D Button effect */
+  .btn-3d {
+    position: relative;
+    transform: translateY(0);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: var(--shadow-3d);
+  }
+  
+  .btn-3d:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-3d-hover);
+  }
+  
+  .btn-3d:active {
+    transform: translateY(1px);
+    box-shadow: var(--shadow-3d-active);
+  }
+  
+  /* 3D Card effect */
+  .card-3d {
+    position: relative;
+    transform: translateY(0);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15),
+                0 8px 16px rgba(0, 0, 0, 0.1),
+                inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  }
+  
+  .card-3d:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2),
+                0 12px 24px rgba(0, 0, 0, 0.15),
+                0 0 30px rgba(255, 215, 0, 0.1),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  }
+  
+  .dark .card-3d {
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4),
+                0 10px 20px rgba(0, 0, 0, 0.3),
+                inset 0 1px 0 rgba(255, 215, 0, 0.1);
+  }
+  
+  .dark .card-3d:hover {
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5),
+                0 16px 32px rgba(0, 0, 0, 0.4),
+                0 0 40px rgba(255, 215, 0, 0.2),
+                inset 0 2px 0 rgba(255, 215, 0, 0.15);
+  }
+}
+
+/* Static depth effect for cards/containers - does not interfere with hover/active */
+@layer components {
+  .btn-depth {
+    box-shadow: 0 2px 0 0 rgba(0, 0, 0, 0.1),
+                inset 0 1px 0 0 rgba(255, 215, 0, 0.1);
+  }
+  
+  .dark .btn-depth {
+    box-shadow: 0 2px 0 0 rgba(0, 0, 0, 0.2),
+                inset 0 1px 0 0 rgba(255, 215, 0, 0.05);
+  }
+
+  /* BNBall-specific card with yellow glow on hover */
+  .bnball-card {
+    @apply bg-card border border-card-border rounded-lg transition-all duration-300;
+  }
+
+  .dark .bnball-card:hover {
+    border-color: hsl(var(--primary) / 0.5);
+    box-shadow: var(--glow-yellow);
+  }
+
+  /* Live indicator pulse animation */
+  .live-pulse {
+    animation: pulse-orange 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  @keyframes pulse-orange {
+    0%, 100% {
+      opacity: 1;
+      box-shadow: 0 0 0 0 rgba(255, 107, 53, 0.7);
+    }
+    50% {
+      opacity: 0.7;
+      box-shadow: 0 0 0 8px rgba(255, 107, 53, 0);
+    }
+  }
+}
