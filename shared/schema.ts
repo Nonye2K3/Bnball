@@ -33,6 +33,7 @@ export const predictionMarkets = pgTable("prediction_markets", {
   resolvedTransactionHash: text("resolved_transaction_hash"),
   resolvedAt: timestamp("resolved_at"),
   oddsApiEventId: text("odds_api_event_id"),
+  apiFootballFixtureId: text("api_football_fixture_id"),
   homeTeam: text("home_team"),
   awayTeam: text("away_team"),
   sport: text("sport"),
@@ -44,6 +45,7 @@ export const predictionMarkets = pgTable("prediction_markets", {
   transactionHashIdx: index("prediction_markets_transaction_hash_idx").on(table.transactionHash),
   creatorAddressIdx: index("prediction_markets_creator_address_idx").on(table.creatorAddress),
   oddsApiEventIdIdx: index("prediction_markets_odds_api_event_id_idx").on(table.oddsApiEventId),
+  apiFootballFixtureIdIdx: index("prediction_markets_api_football_fixture_id_idx").on(table.apiFootballFixtureId),
   sportIdx: index("prediction_markets_sport_idx").on(table.sport),
 }));
 

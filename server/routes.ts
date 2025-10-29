@@ -12,6 +12,7 @@ import {
 } from "./blockchain";
 import { TwitterApi } from 'twitter-api-v2';
 import { oddsApiService } from "./services/oddsApi";
+import { apiFootballService } from "./services/apiFootball";
 
 // Logging utility
 function logRequest(method: string, path: string, data?: any) {
@@ -506,6 +507,97 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.json(market);
     } catch (error) {
       return handleError(res, error, 'fetch market');
+    }
+  });
+
+  // POST /api/markets/sync-football - Sync live football data from API-Football
+  app.post("/api/markets/sync-football", async (req: Request, res: Response) => {
+    try {
+      logRequest('POST', '/api/markets/sync-football');
+      
+      const footballMarkets = await apiFootballService.getAllFootballMarkets();
+      const createdMarkets = [];
+      const updatedMarkets = [];
+      
+      // No live matches available
+      if (footballMarkets.length === 0) {
+        console.log('No live football matches available from API-Football');
+        return res.json({
+          message: 'No live football matches available',
+          created: 0,
+          updated: 0,
+          total: 0,
+          source: 'api-football'
+        });
+      }
+      
+      for (const matchData of footballMarkets) {
+        // Check if market already exists for this fixture
+        const existingMarkets = await storage.getAllPredictionMarkets();
+        const existingMarket = existingMarkets.find(
+          m => m.apiFootballFixtureId === matchData.apiFootballFixtureId
+        );
+        
+        if (!existingMarket) {
+          // Create new market
+          const market = await storage.createPredictionMarket(matchData as any);
+          createdMarkets.push(market);
+        } else {
+          // Update existing market
+          await storage.updatePredictionMarket(existingMarket.id, {
+            yesOdds: matchData.yesOdds,
+            noOdds: matchData.noOdds,
+            status: matchData.status,
+          });
+          updatedMarkets.push(existingMarket.id);
+        }
+      }
+      
+      return res.json({
+        message: `Synced ${footballMarkets.length} football matches from API-Football`,
+        created: createdMarkets.length,
+        updated: updatedMarkets.length,
+        total: footballMarkets.length,
+        source: 'api-football'
+      });
+    } catch (error) {
+      return handleError(res, error, 'sync football data');
+    }
+  });
+
+  // GET /api/football/live - Get live football fixtures
+  app.get("/api/football/live", async (req: Request, res: Response) => {
+    try {
+      logRequest('GET', '/api/football/live');
+      const liveFixtures = await apiFootballService.getLiveFixtures();
+      return res.json(liveFixtures);
+    } catch (error) {
+      return handleError(res, error, 'fetch live football fixtures');
+    }
+  });
+
+  // GET /api/football/upcoming - Get upcoming football fixtures
+  app.get("/api/football/upcoming", async (req: Request, res: Response) => {
+    try {
+      const days = parseInt(req.query.days as string) || 7;
+      logRequest('GET', '/api/football/upcoming', { days });
+      const upcomingFixtures = await apiFootballService.getUpcomingFixtures(days);
+      return res.json(upcomingFixtures);
+    } catch (error) {
+      return handleError(res, error, 'fetch upcoming football fixtures');
+    }
+  });
+
+  // GET /api/football/standings/:leagueId - Get league standings
+  app.get("/api/football/standings/:leagueId", async (req: Request, res: Response) => {
+    try {
+      const { leagueId } = req.params;
+      const season = parseInt(req.query.season as string) || new Date().getFullYear();
+      logRequest('GET', `/api/football/standings/${leagueId}`, { season });
+      const standings = await apiFootballService.getLeagueStandings(parseInt(leagueId), season);
+      return res.json(standings);
+    } catch (error) {
+      return handleError(res, error, 'fetch league standings');
     }
   });
 
