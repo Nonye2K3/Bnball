@@ -25,12 +25,13 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
-import { TrendingUp, AlertCircle, ExternalLink } from "lucide-react";
-import { useCreateMarket } from "@/hooks/usePredictionMarket";
+import { TrendingUp, AlertCircle, ExternalLink, Loader2 } from "lucide-react";
+import { useCreateMarket, useIsRegistered, useRegistrationFee, useRegisterUser } from "@/hooks/usePredictionMarket";
 import { useWeb3 } from "@/hooks/useWeb3";
 import { getExplorerUrl } from "@/lib/contractConfig";
 import { useChainId } from "wagmi";
 import { useEffect } from "react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const createMarketSchema = z.object({
   title: z.string().min(10, "Title must be at least 10 characters"),
@@ -50,6 +51,10 @@ export default function CreateMarket() {
   const chainId = useChainId();
   const { isConnected, connect } = useWeb3();
   const { createMarket, isLoading, isSuccess, txHash } = useCreateMarket();
+  
+  const { isRegistered, isLoading: checkingRegistration } = useIsRegistered();
+  const { feeInBNB } = useRegistrationFee();
+  const { registerUser, isLoading: registering } = useRegisterUser();
   
   const form = useForm<CreateMarketForm>({
     resolver: zodResolver(createMarketSchema),
@@ -118,6 +123,32 @@ export default function CreateMarket() {
           </div>
 
           <Card className="p-8">
+            {/* Registration Gate */}
+            {isConnected && !checkingRegistration && !isRegistered && (
+              <Alert className="bg-amber-500/10 border-amber-500/20 mb-6">
+                <AlertDescription className="space-y-3">
+                  <p className="text-sm">
+                    You must register to create markets. One-time fee: $2 USD ({feeInBNB || '...'} BNB)
+                  </p>
+                  <Button 
+                    onClick={registerUser} 
+                    disabled={registering}
+                    className="w-full"
+                    data-testid="button-register-now"
+                  >
+                    {registering ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Registering...
+                      </>
+                    ) : (
+                      "Register Now"
+                    )}
+                  </Button>
+                </AlertDescription>
+              </Alert>
+            )}
+
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                 <FormField
@@ -255,10 +286,13 @@ export default function CreateMarket() {
                     type="submit"
                     className="flex-1"
                     size="lg"
-                    disabled={isLoading || !isConnected}
+                    disabled={isLoading || !isConnected || checkingRegistration || !isRegistered}
                     data-testid="button-create-market"
                   >
-                    {isLoading ? "Creating Market..." : isConnected ? "Create Market" : "Connect Wallet"}
+                    {isLoading ? "Creating Market..." : 
+                     checkingRegistration ? "Checking Registration..." :
+                     !isRegistered ? "Registration Required" :
+                     isConnected ? "Create Market" : "Connect Wallet"}
                   </Button>
                   <Button
                     type="button"

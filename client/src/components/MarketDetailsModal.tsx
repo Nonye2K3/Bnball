@@ -20,12 +20,13 @@ import {
 import { formatDistanceToNow } from "date-fns";
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { usePlaceBet, useClaimWinnings } from "@/hooks/usePredictionMarket";
+import { usePlaceBet, useClaimWinnings, useIsRegistered, useRegistrationFee, useRegisterUser } from "@/hooks/usePredictionMarket";
 import { useWeb3 } from "@/hooks/useWeb3";
 import { validateBetAmount, formatBNB, toBNBWei, formatBetSplit } from "@/utils/blockchain";
 import { getExplorerUrl, BET_CONFIG, isContractDeployed, FEE_CONFIG, getAddressExplorerUrl } from "@/lib/contractConfig";
 import { useChainId } from "wagmi";
 import { ConfigurationAlert } from "./ConfigurationAlert";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface MarketDetailsModalProps {
   open: boolean;
@@ -68,32 +69,21 @@ export function MarketDetailsModal({ open, onOpenChange, market }: MarketDetails
     txHash: claimTxHash
   } = useClaimWinnings();
 
+  const { isRegistered, isLoading: checkingRegistration } = useIsRegistered();
+  const { feeInBNB } = useRegistrationFee();
+  const { registerUser, isLoading: registering } = useRegisterUser();
+
   const contractDeployed = isContractDeployed(chainId);
 
   const calculatePotentialReturn = () => {
     if (!betAmount || isNaN(parseFloat(betAmount))) return "0.00";
     const amount = parseFloat(betAmount);
-    // Potential return is calculated based on the pool amount (88%) that actually goes to the bet
-    // Contract automatically deducts 10% platform fee + 2% creator fee = 12% total fees
+    // Internal calculation: Contract automatically deducts fees
     const poolAmount = amount * FEE_CONFIG.BET_POOL_DECIMAL;
     const odds = selectedOption === "yes" ? market.yesOdds : market.noOdds;
     const multiplier = 100 / odds;
     return (poolAmount * multiplier).toFixed(3);
   };
-
-  const getBetBreakdown = () => {
-    if (!betAmount || isNaN(parseFloat(betAmount))) {
-      return { total: "0", pool: "0", platformFee: "0", creatorFee: "0", totalFees: "0" };
-    }
-    try {
-      const totalWei = toBNBWei(betAmount);
-      return formatBetSplit(totalWei);
-    } catch {
-      return { total: "0", pool: "0", platformFee: "0", creatorFee: "0", totalFees: "0" };
-    }
-  };
-
-  const breakdown = getBetBreakdown();
 
   const handlePlaceBet = async () => {
     if (!isConnected) {
@@ -164,6 +154,8 @@ export function MarketDetailsModal({ open, onOpenChange, market }: MarketDetails
 
   const getButtonText = () => {
     if (!isConnected) return "Connect Wallet to Bet";
+    if (checkingRegistration) return "Checking Registration...";
+    if (!isRegistered) return "Registration Required";
     if (!contractDeployed) return "Contract Not Deployed";
     if (market.status !== "live") return "Market Not Active";
     
@@ -174,6 +166,8 @@ export function MarketDetailsModal({ open, onOpenChange, market }: MarketDetails
   };
 
   const isButtonDisabled = () => {
+    if (checkingRegistration) return true;
+    if (!isRegistered) return true;
     if (isPlacingBet) return true;
     if (market.status !== "live") return true;
     if (!betAmount || parseFloat(betAmount) <= 0) return true;
@@ -217,6 +211,32 @@ export function MarketDetailsModal({ open, onOpenChange, market }: MarketDetails
 
           <TabsContent value="bet" className="space-y-4 mt-4">
             <ConfigurationAlert variant="compact" showTitle={false} />
+            
+            {/* Registration Gate */}
+            {isConnected && !checkingRegistration && !isRegistered && (
+              <Alert className="bg-amber-500/10 border-amber-500/20">
+                <AlertDescription className="space-y-3">
+                  <p className="text-sm">
+                    You must register to place bets. One-time fee: $2 USD ({feeInBNB || '...'} BNB)
+                  </p>
+                  <Button 
+                    onClick={registerUser} 
+                    disabled={registering}
+                    className="w-full"
+                    data-testid="button-register-now"
+                  >
+                    {registering ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Registering...
+                      </>
+                    ) : (
+                      "Register Now"
+                    )}
+                  </Button>
+                </AlertDescription>
+              </Alert>
+            )}
             
             <div className="grid grid-cols-2 gap-3">
               <button
@@ -304,7 +324,7 @@ export function MarketDetailsModal({ open, onOpenChange, market }: MarketDetails
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Your Bet Amount</span>
                   <span className="font-mono font-semibold text-lg" data-testid="text-total-bet">
-                    {breakdown.total} BNB
+                    {parseFloat(betAmount).toFixed(3)} BNB
                   </span>
                 </div>
               </div>
