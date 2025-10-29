@@ -47,10 +47,10 @@ export function Hero() {
       step++;
       const progress = step / steps;
       setStats({
-        volume: Math.floor(targetStats.volume * progress),
-        markets: Math.floor(targetStats.markets * progress),
-        users: Math.floor(targetStats.users * progress),
-        pool: Math.floor(targetStats.pool * progress)
+        volume: Math.round(targetStats.volume * progress * 100) / 100, // Round to 2 decimals
+        markets: Math.round(targetStats.markets * progress),
+        users: Math.round(targetStats.users * progress),
+        pool: Math.round(targetStats.pool * progress * 100) / 100 // Round to 2 decimals
       });
 
       if (step >= steps) clearInterval(timer);
@@ -155,7 +155,12 @@ export function Hero() {
             <div className="flex flex-col items-center gap-2 p-6 rounded-xl bg-black/40 backdrop-blur-xl border border-secondary/30 hover:border-secondary/60 transition-all duration-300 group" data-testid="stat-total-volume">
               <TrendingUp className="w-6 h-6 text-secondary group-hover:scale-110 transition-transform" />
               <div className="font-mono text-2xl font-bold text-white" data-testid="value-total-volume">
-                ${(stats.volume / 1000).toFixed(0)}K
+                {stats.volume >= 1000000 
+                  ? `$${(stats.volume / 1000000).toFixed(1)}M`
+                  : stats.volume >= 1000
+                    ? `$${(stats.volume / 1000).toFixed(1)}K`
+                    : `$${stats.volume.toFixed(0)}`
+                }
               </div>
               <div className="text-xs text-gray-400 uppercase tracking-wider">Total Volume</div>
             </div>
@@ -164,7 +169,7 @@ export function Hero() {
             <div className="flex flex-col items-center gap-2 p-6 rounded-xl bg-black/40 backdrop-blur-xl border border-primary/30 hover:border-primary/60 transition-all duration-300 group" data-testid="stat-active-markets">
               <Trophy className="w-6 h-6 text-primary group-hover:scale-110 transition-transform" />
               <div className="font-mono text-2xl font-bold text-white" data-testid="value-active-markets">
-                {stats.markets}+
+                {stats.markets}
               </div>
               <div className="text-xs text-gray-400 uppercase tracking-wider">Live Markets</div>
             </div>
@@ -173,7 +178,10 @@ export function Hero() {
             <div className="flex flex-col items-center gap-2 p-6 rounded-xl bg-black/40 backdrop-blur-xl border border-accent/30 hover:border-accent/60 transition-all duration-300 group" data-testid="stat-active-users">
               <Users className="w-6 h-6 text-accent group-hover:scale-110 transition-transform" />
               <div className="font-mono text-2xl font-bold text-white" data-testid="value-active-users">
-                {(stats.users / 1000).toFixed(1)}K
+                {stats.users >= 1000
+                  ? `${(stats.users / 1000).toFixed(1)}K`
+                  : stats.users
+                }
               </div>
               <div className="text-xs text-gray-400 uppercase tracking-wider">Active Users</div>
             </div>
@@ -182,7 +190,7 @@ export function Hero() {
             <div className="flex flex-col items-center gap-2 p-6 rounded-xl bg-black/40 backdrop-blur-xl border border-primary/30 hover:border-primary/60 transition-all duration-300 group" data-testid="stat-prize-pool">
               <Zap className="w-6 h-6 text-primary group-hover:scale-110 transition-transform" />
               <div className="font-mono text-2xl font-bold text-white" data-testid="value-prize-pool">
-                {stats.pool.toLocaleString()} BNB
+                {stats.pool.toFixed(2)} BNB
               </div>
               <div className="text-xs text-gray-400 uppercase tracking-wider">Prize Pool</div>
             </div>

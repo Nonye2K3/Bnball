@@ -132,7 +132,16 @@ export function StatsOverview() {
   
   // Calculate formatted values from real-time data
   const totalVolumeUSD = platformStats 
-    ? `$${(parseFloat(formatEther(BigInt(platformStats.totalVolume || '0'))) * 350 / 1000000).toFixed(1)}M`
+    ? (() => {
+        const volumeUSD = parseFloat(formatEther(BigInt(platformStats.totalVolume || '0'))) * 350;
+        if (volumeUSD >= 1000000) {
+          return `$${(volumeUSD / 1000000).toFixed(2)}M`;
+        } else if (volumeUSD >= 1000) {
+          return `$${(volumeUSD / 1000).toFixed(2)}K`;
+        } else {
+          return `$${volumeUSD.toFixed(2)}`;
+        }
+      })()
     : '$0';
   
   const activeUsers = platformStats
@@ -144,7 +153,10 @@ export function StatsOverview() {
     : '0';
     
   const totalPrizePoolBNB = platformStats
-    ? `${parseFloat(formatEther(BigInt(platformStats.totalPrizePool || '0'))).toLocaleString()} BNB`
+    ? (() => {
+        const poolBNB = parseFloat(formatEther(BigInt(platformStats.totalPrizePool || '0')));
+        return `${poolBNB.toFixed(2)} BNB`;
+      })()
     : '0 BNB';
 
   return (
