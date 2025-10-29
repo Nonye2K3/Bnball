@@ -26,7 +26,7 @@ contract PredictionMarket {
         bool claimed;
     }
 
-    uint256 public minBetAmount = 0.5 ether;
+    uint256 public minBetAmount = 0.01 ether;
     uint256 public createMarketStake = 1.0 ether;
     uint256 public marketCount;
     address public owner;

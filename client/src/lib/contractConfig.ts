@@ -65,9 +65,9 @@ export const TAX_CONFIG = {
 
 // Betting configuration
 export const BET_CONFIG = {
-  // Minimum bet amount (0.5 BNB)
-  MIN_BET_AMOUNT: parseEther('0.5'),
-  MIN_BET_AMOUNT_DISPLAY: '0.5',
+  // Minimum bet amount (0.01 BNB)
+  MIN_BET_AMOUNT: parseEther('0.01'),
+  MIN_BET_AMOUNT_DISPLAY: '0.01',
   
   // Market creation stake (amount required to create a new market)
   // This will be fetched from contract, but we set a default
