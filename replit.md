@@ -44,11 +44,16 @@ Preferred communication style: Simple, everyday language.
 - **Hero Section:** Green heading "Sports predictions, on-chain and transparent", exact subtitle, two CTAs (Start Predicting, How It Works), four feature cards (Non-custodial, Low fees, Real-time prices, On-chain payouts), 3D interactive soccer balls with Binance logo (gracefully degrades in headless browsers)
 - **Live Markets Preview:** Three market cards with league badges, countdown timers, mini chart visualizations, exact labels (H142, Realtime prices, Pook time prices, H/H), YES/NO toggle buttons, Predict button
 - **How It Works:** Left-aligned three steps (Pick a match, Predict YES or NO, Withdraw on-chain) with right-aligned bullet points (Price by oracles, Audited smart contracts, Secure treasury)
-- **Footer:** Learn section (Whitepaper, FAQ), Community section (Twitter, Telegram), social icons, "Play responsibly" text
+- **Footer:** Learn section (Whitepaper, FAQ), Community section (Twitter, Telegram), 3D social icons with official links, "Play responsibly" text
 - **3D Elements:** Three.js integration with error handling for WebGL compatibility
+- **3D Social Icons:** Framer Motion-powered icons with depth shadows, glow effects, and hover animations (BSCScan-green, Twitter/X-yellow, Telegram-orange)
 - **Light/Dark Mode:** Full support with black background (dark) and white/light gray background (light), yellow/green/orange accents maintained across both themes
 
 **Social Features:**
+- **Official Social Links:**
+  - Twitter/X: https://x.com/bn_ball_
+  - Telegram: https://t.me/BNBALL_Portal
+  - BSCScan: https://bscscan.com
 - **Win Sharing:** Users can share winning bets to X/Twitter with auto-generated branded images
 - **Image Generation:** HTML5 Canvas-based image generator creates 1:1 or 9:16 format images
 - **Image Branding:** Generated images include BNBall logo watermark, market details, stake, winnings, and multiplier

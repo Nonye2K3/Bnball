@@ -73,7 +73,7 @@ export function Footer() {
             <h3 className="text-sm font-bold mb-4 text-foreground uppercase tracking-wider">Community</h3>
             <div className="space-y-3">
               <a
-                href="https://twitter.com/bnball"
+                href="https://x.com/bn_ball_"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors group"
@@ -83,7 +83,7 @@ export function Footer() {
                 Twitter
               </a>
               <a
-                href="https://t.me/bnball"
+                href="https://t.me/BNBALL_Portal"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors group"
@@ -91,15 +91,6 @@ export function Footer() {
               >
                 <SiTelegram className="w-4 h-4 group-hover:scale-110 transition-transform" />
                 Telegram
-              </a>
-              <a
-                href="https://discord.gg/bnball"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors group"
-                data-testid="footer-link-discord"
-              >
-                Discord
               </a>
             </div>
           </div>
@@ -136,39 +127,61 @@ export function Footer() {
               </p>
             </div>
 
-            {/* Social Icons */}
+            {/* 3D Social Icons */}
             <div className="flex items-center gap-4">
-              <a
+              <motion.a
                 href="https://bscscan.com"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-muted-foreground hover:text-secondary transition-colors group"
+                className="relative p-3 rounded-xl bg-gradient-to-br from-secondary/20 to-secondary/10 border border-secondary/30 text-secondary hover:text-secondary transition-all duration-300 group"
                 aria-label="BSCScan"
                 title="View on BSCScan"
                 data-testid="footer-icon-bscscan"
+                whileHover={{ scale: 1.1, y: -2 }}
+                whileTap={{ scale: 0.95 }}
+                style={{
+                  boxShadow: 'var(--shadow-3d)',
+                }}
               >
-                <SiBinance className="w-6 h-6 group-hover:scale-110 transition-transform" />
-              </a>
-              <a
-                href="https://twitter.com/bnball"
+                <SiBinance className="w-6 h-6 relative z-10 group-hover:drop-shadow-[0_0_8px_rgba(16,185,129,0.6)] transition-all" />
+                <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-secondary/0 to-secondary/20 opacity-0 group-hover:opacity-100 transition-opacity" />
+              </motion.a>
+              
+              <motion.a
+                href="https://x.com/bn_ball_"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-muted-foreground hover:text-primary transition-colors group"
+                className="relative p-3 rounded-xl bg-gradient-to-br from-primary/20 to-primary/10 border border-primary/30 text-primary hover:text-primary transition-all duration-300 group"
                 aria-label="Twitter"
+                title="Follow us on X"
                 data-testid="footer-icon-twitter"
+                whileHover={{ scale: 1.1, y: -2 }}
+                whileTap={{ scale: 0.95 }}
+                style={{
+                  boxShadow: 'var(--shadow-3d)',
+                }}
               >
-                <SiX className="w-6 h-6 group-hover:scale-110 transition-transform" />
-              </a>
-              <a
-                href="https://t.me/bnball"
+                <SiX className="w-6 h-6 relative z-10 group-hover:drop-shadow-[0_0_8px_rgba(255,215,0,0.6)] transition-all" />
+                <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-primary/0 to-primary/20 opacity-0 group-hover:opacity-100 transition-opacity" />
+              </motion.a>
+              
+              <motion.a
+                href="https://t.me/BNBALL_Portal"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-muted-foreground hover:text-primary transition-colors group"
+                className="relative p-3 rounded-xl bg-gradient-to-br from-accent/20 to-accent/10 border border-accent/30 text-accent hover:text-accent transition-all duration-300 group"
                 aria-label="Telegram"
+                title="Join our Telegram"
                 data-testid="footer-icon-telegram"
+                whileHover={{ scale: 1.1, y: -2 }}
+                whileTap={{ scale: 0.95 }}
+                style={{
+                  boxShadow: 'var(--shadow-3d)',
+                }}
               >
-                <SiTelegram className="w-6 h-6 group-hover:scale-110 transition-transform" />
-              </a>
+                <SiTelegram className="w-6 h-6 relative z-10 group-hover:drop-shadow-[0_0_8px_rgba(255,107,53,0.6)] transition-all" />
+                <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-accent/0 to-accent/20 opacity-0 group-hover:opacity-100 transition-opacity" />
+              </motion.a>
             </div>
           </div>
         </div>
