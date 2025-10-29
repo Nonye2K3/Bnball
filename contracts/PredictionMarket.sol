@@ -1,6 +1,19 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
+interface AggregatorV3Interface {
+    function latestRoundData()
+        external
+        view
+        returns (
+            uint80 roundId,
+            int256 answer,
+            uint256 startedAt,
+            uint256 updatedAt,
+            uint80 answeredInRound
+        );
+}
+
 contract PredictionMarket {
     struct Market {
         uint256 id;
@@ -16,6 +29,7 @@ contract PredictionMarket {
         bool outcome;
         address creator;
         uint256 creatorStake;
+        uint256 creatorFeeAccrued;
     }
 
     struct Bet {
@@ -26,20 +40,32 @@ contract PredictionMarket {
         bool claimed;
     }
 
+    // Constants
+    uint256 public constant PLATFORM_FEE_BP = 1000; // 10% in basis points
+    uint256 public constant CREATOR_FEE_BP = 200;   // 2% in basis points
+    uint256 public constant BASIS_POINTS = 10000;
+    
     uint256 public minBetAmount = 0.01 ether;
-    uint256 public createMarketStake = 1.0 ether;
+    uint256 public createMarketStake = 0.1 ether;
+    uint256 public registrationFeeUSD = 2; // $2 USD
     uint256 public marketCount;
+    
     address public owner;
+    address public immutable platformFeeRecipient;
+    AggregatorV3Interface public immutable bnbUsdPriceFeed;
     
     mapping(uint256 => Market) public markets;
     mapping(address => Bet[]) public userBets;
     mapping(uint256 => mapping(address => Bet)) public marketUserBets;
     mapping(uint256 => mapping(bool => uint256)) public marketPools;
+    mapping(address => bool) public registeredUsers;
     
     event MarketCreated(uint256 indexed marketId, address indexed creator, string title, uint256 deadline);
-    event BetPlaced(uint256 indexed marketId, address indexed bettor, bool prediction, uint256 amount);
+    event BetPlaced(uint256 indexed marketId, address indexed bettor, bool prediction, uint256 amount, uint256 platformFee, uint256 creatorFee);
     event MarketResolved(uint256 indexed marketId, bool outcome);
     event WinningsClaimed(uint256 indexed marketId, address indexed winner, uint256 amount);
+    event UserRegistered(address indexed user, uint256 feePaid);
+    event PlatformFeeCollected(uint256 amount);
 
     modifier onlyOwner() {
         require(msg.sender == owner, "Only owner can call this");
@@ -66,9 +92,64 @@ contract PredictionMarket {
         _;
     }
 
-    constructor() {
+    modifier requiresRegistration() {
+        require(registeredUsers[msg.sender], "User must register first");
+        _;
+    }
+
+    constructor(address _platformFeeRecipient, address _bnbUsdPriceFeed) {
+        require(_platformFeeRecipient != address(0), "Invalid platform fee recipient");
+        require(_bnbUsdPriceFeed != address(0), "Invalid price feed address");
+        
         owner = msg.sender;
+        platformFeeRecipient = _platformFeeRecipient;
+        bnbUsdPriceFeed = AggregatorV3Interface(_bnbUsdPriceFeed);
         marketCount = 0;
+        
+        // Owner is pre-registered
+        registeredUsers[msg.sender] = true;
+    }
+
+    /**
+     * @notice Register user with $2 USD equivalent in BNB
+     * @dev Uses Chainlink BNB/USD oracle to convert USD to BNB
+     */
+    function registerUser() external payable {
+        require(!registeredUsers[msg.sender], "User already registered");
+        
+        uint256 requiredBNB = getRegistrationFeeInBNB();
+        require(msg.value >= requiredBNB, "Insufficient registration fee");
+        
+        registeredUsers[msg.sender] = true;
+        
+        // Send registration fee to platform
+        (bool success, ) = payable(platformFeeRecipient).call{value: msg.value}("");
+        require(success, "Failed to send registration fee");
+        
+        emit UserRegistered(msg.sender, msg.value);
+    }
+
+    /**
+     * @notice Get current BNB/USD price from Chainlink oracle
+     * @return price BNB/USD price with 8 decimals
+     */
+    function getBNBUSDPrice() public view returns (uint256) {
+        (, int256 price, , uint256 updatedAt, ) = bnbUsdPriceFeed.latestRoundData();
+        require(price > 0, "Invalid price feed");
+        require(block.timestamp - updatedAt <= 1 hours, "Price feed stale");
+        return uint256(price);
+    }
+
+    /**
+     * @notice Calculate registration fee in BNB
+     * @return fee Registration fee in BNB (wei)
+     */
+    function getRegistrationFeeInBNB() public view returns (uint256) {
+        uint256 bnbUsdPrice = getBNBUSDPrice(); // 8 decimals
+        // registrationFeeUSD is in dollars, bnbUsdPrice has 8 decimals
+        // fee = (registrationFeeUSD * 10^26) / bnbUsdPrice
+        // This gives us BNB in wei (18 decimals)
+        return (registrationFeeUSD * 1e26) / bnbUsdPrice;
     }
 
     function createMarket(
@@ -76,7 +157,7 @@ contract PredictionMarket {
         string memory description,
         string memory category,
         uint256 deadline
-    ) external payable returns (uint256 marketId) {
+    ) external payable requiresRegistration returns (uint256 marketId) {
         require(msg.value == createMarketStake, "Must send exact stake amount");
         require(deadline > block.timestamp, "Deadline must be in the future");
         require(bytes(title).length >= 10, "Title too short");
@@ -98,7 +179,8 @@ contract PredictionMarket {
             resolved: false,
             outcome: false,
             creator: msg.sender,
-            creatorStake: msg.value
+            creatorStake: msg.value,
+            creatorFeeAccrued: 0
         });
 
         emit MarketCreated(marketId, msg.sender, title, deadline);
@@ -108,6 +190,7 @@ contract PredictionMarket {
     function placeBet(uint256 marketId, bool prediction)
         external
         payable
+        requiresRegistration
         marketExists(marketId)
         marketNotResolved(marketId)
         beforeDeadline(marketId)
@@ -117,21 +200,34 @@ contract PredictionMarket {
 
         Market storage market = markets[marketId];
         
+        // Calculate fees: 10% platform + 2% creator = 12% total
+        uint256 platformFee = (msg.value * PLATFORM_FEE_BP) / BASIS_POINTS; // 10%
+        uint256 creatorFee = (msg.value * CREATOR_FEE_BP) / BASIS_POINTS;   // 2%
+        uint256 betAmount = msg.value - platformFee - creatorFee;            // 88%
+        
+        // Send platform fee immediately
+        (bool success, ) = payable(platformFeeRecipient).call{value: platformFee}("");
+        require(success, "Failed to send platform fee");
+        
+        // Accrue creator fee (paid on resolution)
+        market.creatorFeeAccrued += creatorFee;
+        
+        // Add bet amount to pools (88% of original bet)
         if (prediction) {
-            market.yesPool += msg.value;
-            marketPools[marketId][true] += msg.value;
+            market.yesPool += betAmount;
+            marketPools[marketId][true] += betAmount;
         } else {
-            market.noPool += msg.value;
-            marketPools[marketId][false] += msg.value;
+            market.noPool += betAmount;
+            marketPools[marketId][false] += betAmount;
         }
         
-        market.totalPool += msg.value;
+        market.totalPool += betAmount;
         market.participants++;
 
         Bet memory newBet = Bet({
             marketId: marketId,
             prediction: prediction,
-            amount: msg.value,
+            amount: msg.value, // Store original amount for user reference
             timestamp: block.timestamp,
             claimed: false
         });
@@ -139,7 +235,8 @@ contract PredictionMarket {
         userBets[msg.sender].push(newBet);
         marketUserBets[marketId][msg.sender] = newBet;
 
-        emit BetPlaced(marketId, msg.sender, prediction, msg.value);
+        emit BetPlaced(marketId, msg.sender, prediction, msg.value, platformFee, creatorFee);
+        emit PlatformFeeCollected(platformFee);
     }
 
     function resolveMarket(uint256 marketId, bool outcome)
@@ -154,12 +251,8 @@ contract PredictionMarket {
         market.resolved = true;
         market.outcome = outcome;
 
-        uint256 totalPayout = market.creatorStake;
-        
-        if (market.totalPool > 0) {
-            uint256 creatorFee = (market.totalPool * 5) / 1000;
-            totalPayout += creatorFee;
-        }
+        // Pay creator: stake refund + accrued 2% creator fees
+        uint256 totalPayout = market.creatorStake + market.creatorFeeAccrued;
 
         emit MarketResolved(marketId, outcome);
 
@@ -181,16 +274,21 @@ contract PredictionMarket {
         uint256 winningPool = market.outcome ? market.yesPool : market.noPool;
         uint256 losingPool = market.outcome ? market.noPool : market.yesPool;
         
-        uint256 creatorFee = (market.totalPool * 5) / 1000;
-        uint256 availablePool = market.totalPool - creatorFee;
+        // Calculate user's share from the 88% pool (after 12% fees)
+        uint256 platformFee = (userBet.amount * PLATFORM_FEE_BP) / BASIS_POINTS;
+        uint256 creatorFee = (userBet.amount * CREATOR_FEE_BP) / BASIS_POINTS;
+        uint256 userBetInPool = userBet.amount - platformFee - creatorFee;
+        
         uint256 winnings;
 
         if (winningPool == 0) {
+            // No winners, losers get refund from losing pool
             require(userBet.prediction != market.outcome, "No winners to claim from");
-            winnings = (userBet.amount * availablePool) / losingPool;
+            winnings = (userBetInPool * market.totalPool) / losingPool;
         } else {
+            // Normal case: winners split the entire pool
             require(userBet.prediction == market.outcome, "Bet lost");
-            winnings = (userBet.amount * availablePool) / winningPool;
+            winnings = (userBetInPool * market.totalPool) / winningPool;
         }
 
         userBet.claimed = true;
@@ -233,12 +331,21 @@ contract PredictionMarket {
         return (true, bet.prediction, bet.amount, bet.claimed);
     }
 
+    function isUserRegistered(address user) external view returns (bool) {
+        return registeredUsers[user];
+    }
+
     function updateMinBetAmount(uint256 newMinBet) external onlyOwner {
         minBetAmount = newMinBet;
     }
 
     function updateCreateMarketStake(uint256 newStake) external onlyOwner {
         createMarketStake = newStake;
+    }
+
+    function updateRegistrationFeeUSD(uint256 newFeeUSD) external onlyOwner {
+        require(newFeeUSD >= 1 && newFeeUSD <= 100, "Fee must be between $1 and $100");
+        registrationFeeUSD = newFeeUSD;
     }
 
     receive() external payable {}

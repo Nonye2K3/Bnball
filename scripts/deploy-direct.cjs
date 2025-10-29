@@ -54,10 +54,21 @@ async function main() {
     process.exit(1);
   }
 
+  // Constructor arguments
+  const platformFeeRecipient = "0xC196dc762FbC2AB044AAEAc05E27CD10c4982a01"; // Escrow wallet
+  const bnbUsdPriceFeed = isMainnet
+    ? "0x0567F2323251f0Aab15c8dFb1967E4e8A7D42aeE" // Chainlink BNB/USD Mainnet
+    : "0x2514895c72f50D8bd4B4F9b1110F0D6bD2c97526"; // Chainlink BNB/USD Testnet
+  
+  console.log("Constructor Arguments:");
+  console.log("- Platform Fee Recipient:", platformFeeRecipient);
+  console.log("- BNB/USD Price Feed:", bnbUsdPriceFeed);
+  console.log();
+  
   // Deploy contract
   console.log("Deploying PredictionMarket contract...");
   const factory = new ethers.ContractFactory(artifact.abi, artifact.bytecode, wallet);
-  const contract = await factory.deploy();
+  const contract = await factory.deploy(platformFeeRecipient, bnbUsdPriceFeed);
   
   console.log("Deployment transaction sent:", contract.deploymentTransaction().hash);
   console.log("Waiting for confirmation...\n");
@@ -75,11 +86,17 @@ async function main() {
   const minBetAmount = await contract.minBetAmount();
   const createMarketStake = await contract.createMarketStake();
   const owner = await contract.owner();
+  const registrationFeeUSD = await contract.registrationFeeUSD();
+  const platformFeeRecipientRead = await contract.platformFeeRecipient();
   
   console.log("\nContract Configuration:");
   console.log("- Owner:", owner);
+  console.log("- Platform Fee Recipient:", platformFeeRecipientRead);
   console.log("- Minimum Bet Amount:", ethers.formatEther(minBetAmount), "BNB");
   console.log("- Create Market Stake:", ethers.formatEther(createMarketStake), "BNB");
+  console.log("- Registration Fee: $" + registrationFeeUSD.toString() + " USD");
+  console.log("- Platform Fee: 10%");
+  console.log("- Creator Fee: 2%");
   
   console.log("\n📝 Next Steps:");
   console.log("1. Copy the contract address above");

@@ -1,5 +1,5 @@
 import { parseEther, formatEther } from 'viem'
-import { BET_CONFIG, TAX_CONFIG } from '@/lib/contractConfig'
+import { BET_CONFIG, FEE_CONFIG } from '@/lib/contractConfig'
 
 /**
  * Validates that a bet amount meets the minimum requirement
@@ -220,94 +220,55 @@ export function checkSufficientBalance(
 }
 
 /**
- * Calculates the 1% tax amount from a bet
+ * Calculates the fee breakdown for a bet (for display purposes only)
+ * The contract handles these fees automatically on-chain
  * @param betAmountWei - Total bet amount in Wei
- * @returns Tax amount in Wei (1% of bet)
+ * @returns Fee breakdown in Wei
  */
-export function calculateBetTax(betAmountWei: bigint): bigint {
-  // Calculate 1% using BigInt arithmetic to avoid precision loss
-  // Tax = betAmount * 1 / 100
-  return (betAmountWei * BigInt(TAX_CONFIG.TAX_RATE_PERCENT)) / BigInt(100)
-}
-
-/**
- * Splits a bet amount into pool and tax portions
- * @param betAmountWei - Total bet amount in Wei
- * @returns Object with poolAmount (99%) and taxAmount (1%) in Wei
- */
-export function calculateBetSplit(betAmountWei: bigint): {
+export function calculateBetFees(betAmountWei: bigint): {
+  platformFee: bigint
+  creatorFee: bigint
   poolAmount: bigint
-  taxAmount: bigint
+  totalFees: bigint
   totalAmount: bigint
 } {
-  const taxAmount = calculateBetTax(betAmountWei)
-  const poolAmount = betAmountWei - taxAmount
+  // Calculate fees using BigInt arithmetic to avoid precision loss
+  const platformFee = (betAmountWei * BigInt(FEE_CONFIG.PLATFORM_FEE_PERCENT)) / BigInt(100)
+  const creatorFee = (betAmountWei * BigInt(FEE_CONFIG.CREATOR_FEE_PERCENT)) / BigInt(100)
+  const totalFees = platformFee + creatorFee
+  const poolAmount = betAmountWei - totalFees
   
   return {
+    platformFee,
+    creatorFee,
     poolAmount,
-    taxAmount,
+    totalFees,
     totalAmount: betAmountWei
   }
 }
 
 /**
- * Formats bet split for display
+ * Formats bet fee breakdown for display
+ * Note: Fees are handled automatically by the smart contract
  * @param betAmountWei - Total bet amount in Wei
  * @param decimals - Number of decimal places (default: 4)
- * @returns Object with formatted amounts
+ * @returns Object with formatted fee amounts
  */
 export function formatBetSplit(betAmountWei: bigint, decimals: number = 4): {
   total: string
   pool: string
-  tax: string
-  poolBNB: string
-  taxBNB: string
+  platformFee: string
+  creatorFee: string
+  totalFees: string
 } {
-  const { poolAmount, taxAmount, totalAmount } = calculateBetSplit(betAmountWei)
+  const { platformFee, creatorFee, poolAmount, totalFees, totalAmount } = calculateBetFees(betAmountWei)
   
   return {
     total: formatBNB(totalAmount, decimals),
     pool: formatBNB(poolAmount, decimals),
-    tax: formatBNB(taxAmount, decimals),
-    poolBNB: formatBNBWithSymbol(poolAmount, decimals),
-    taxBNB: formatBNBWithSymbol(taxAmount, decimals),
-  }
-}
-
-/**
- * Calculates total cost including bet, tax, and gas for both transactions
- * @param betAmountWei - Total bet amount in Wei
- * @param betGasLimit - Gas limit for bet transaction
- * @param transferGasLimit - Gas limit for tax transfer (default: 21000)
- * @param gasPrice - Current gas price in Wei (optional)
- * @returns Total cost breakdown in Wei
- */
-export function calculateTotalBetCost(
-  betAmountWei: bigint,
-  betGasLimit: bigint,
-  transferGasLimit: bigint = BigInt(21000),
-  gasPrice?: bigint
-): {
-  betAmount: bigint
-  taxAmount: bigint
-  betGasCost: bigint
-  taxGasCost: bigint
-  totalCost: bigint
-  totalGas: bigint
-} {
-  const { poolAmount, taxAmount } = calculateBetSplit(betAmountWei)
-  
-  const betGasCost = estimateGasCost(betGasLimit, gasPrice).gasCostWei
-  const taxGasCost = estimateGasCost(transferGasLimit, gasPrice).gasCostWei
-  const totalGas = betGasCost + taxGasCost
-  
-  return {
-    betAmount: poolAmount,
-    taxAmount,
-    betGasCost,
-    taxGasCost,
-    totalCost: betAmountWei + totalGas,
-    totalGas,
+    platformFee: formatBNB(platformFee, decimals),
+    creatorFee: formatBNB(creatorFee, decimals),
+    totalFees: formatBNB(totalFees, decimals),
   }
 }
 

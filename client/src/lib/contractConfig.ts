@@ -47,20 +47,29 @@ export function getContractAddress(chainId: number): `0x${string}` {
 // Contract ABI
 export const PREDICTION_MARKET_ABI = PredictionMarketABI.abi
 
-// Escrow wallet configuration
-// This wallet receives platform fee on all bets placed
-export const ESCROW_WALLET_ADDRESS = '0xC196dc762FbC2AB044AAEAc05E27CD10c4982a01' as `0x${string}`
+// Platform fee recipient (receives 10% platform fee on-chain)
+export const PLATFORM_FEE_RECIPIENT = '0xC196dc762FbC2AB044AAEAc05E27CD10c4982a01' as `0x${string}`
 
-// Tax configuration (fees automatically deducted from bet amount)
-export const TAX_CONFIG = {
-  // Platform fee rate as a percentage (8%)
-  TAX_RATE_PERCENT: 8,
-  // Platform fee rate as a decimal for calculations (0.08)
-  TAX_RATE_DECIMAL: 0.08,
-  // Percentage that goes to the bet pool after platform fee (92%)
-  BET_POOL_PERCENT: 92,
-  // Percentage that goes to the bet pool as decimal (0.92)
-  BET_POOL_DECIMAL: 0.92,
+// Fee configuration (all fees collected on-chain, hidden from users)
+export const FEE_CONFIG = {
+  // Platform fee: 10% (collected on-chain during placeBet)
+  PLATFORM_FEE_PERCENT: 10,
+  PLATFORM_FEE_DECIMAL: 0.10,
+  
+  // Creator fee: 2% (accrued on-chain, paid on resolution)
+  CREATOR_FEE_PERCENT: 2,
+  CREATOR_FEE_DECIMAL: 0.02,
+  
+  // Total fees: 12%
+  TOTAL_FEE_PERCENT: 12,
+  TOTAL_FEE_DECIMAL: 0.12,
+  
+  // Percentage that goes to betting pools: 88%
+  BET_POOL_PERCENT: 88,
+  BET_POOL_DECIMAL: 0.88,
+  
+  // Registration fee in USD
+  REGISTRATION_FEE_USD: 2,
 } as const
 
 // Betting configuration
@@ -70,14 +79,14 @@ export const BET_CONFIG = {
   MIN_BET_AMOUNT_DISPLAY: '0.01',
   
   // Market creation stake (amount required to create a new market)
-  // This will be fetched from contract, but we set a default
-  CREATE_MARKET_STAKE: parseEther('1.0'),
-  CREATE_MARKET_STAKE_DISPLAY: '1.0',
+  CREATE_MARKET_STAKE: parseEther('0.1'),
+  CREATE_MARKET_STAKE_DISPLAY: '0.1',
 } as const
 
 // Gas limit configurations for different operations
 export const GAS_LIMITS = {
-  PLACE_BET: BigInt(150000),
+  REGISTER_USER: BigInt(200000),
+  PLACE_BET: BigInt(200000),
   CREATE_MARKET: BigInt(300000),
   RESOLVE_MARKET: BigInt(200000),
   CLAIM_WINNINGS: BigInt(150000),
@@ -119,7 +128,7 @@ export function isValidEthereumAddress(address: string): boolean {
   return /^0x[a-fA-F0-9]{40}$/.test(address)
 }
 
-// Validate escrow wallet address on module load
-if (!isValidEthereumAddress(ESCROW_WALLET_ADDRESS)) {
-  console.error(`Invalid escrow wallet address: ${ESCROW_WALLET_ADDRESS}`)
+// Validate platform fee recipient address on module load
+if (!isValidEthereumAddress(PLATFORM_FEE_RECIPIENT)) {
+  console.error(`Invalid platform fee recipient address: ${PLATFORM_FEE_RECIPIENT}`)
 }

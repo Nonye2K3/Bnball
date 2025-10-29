@@ -1,4 +1,4 @@
-import { useAccount, useReadContract, useWriteContract, useWaitForTransactionReceipt, useChainId, useBalance, useSendTransaction } from 'wagmi'
+import { useAccount, useReadContract, useWriteContract, useWaitForTransactionReceipt, useChainId, useBalance } from 'wagmi'
 import { parseEther, formatEther } from 'viem'
 import { 
   PREDICTION_MARKET_ABI, 
@@ -6,8 +6,7 @@ import {
   GAS_LIMITS,
   isContractDeployed,
   BET_CONFIG,
-  ESCROW_WALLET_ADDRESS,
-  TAX_CONFIG
+  FEE_CONFIG
 } from '@/lib/contractConfig'
 import { 
   validateBetAmount, 
@@ -15,9 +14,7 @@ import {
   parseBlockchainError,
   estimateGasCost,
   checkSufficientBalance,
-  calculateBetSplit,
-  formatBetSplit,
-  calculateTotalBetCost
+  formatBNB
 } from '@/utils/blockchain'
 import { useState, useEffect, useRef } from 'react'
 import { useToast } from '@/hooks/use-toast'
@@ -27,10 +24,14 @@ import { persistTransaction } from './useWeb3'
 import type { Bet } from '@shared/schema'
 
 /**
- * Hook for placing a bet on a prediction market with 1% escrow tax
+ * Hook for placing a bet on a prediction market
  * 
- * CRITICAL: Tax is collected FIRST, then the bet is placed.
- * This ensures users cannot bypass the tax by rejecting the second transaction.
+ * The smart contract automatically handles all fees on-chain:
+ * - 10% platform fee (sent to PLATFORM_FEE_RECIPIENT immediately)
+ * - 2% creator fee (accrued, paid on resolution)
+ * - 88% goes to betting pools
+ * 
+ * Users only need to submit one transaction with the full bet amount.
  */
 export function usePlaceBet() {
   const { address } = useAccount()
@@ -38,134 +39,43 @@ export function usePlaceBet() {
   const { toast } = useToast()
   const { data: balance } = useBalance({ address })
   
-  // Escrow tax transfer transaction (FIRST TRANSACTION)
-  const {
-    data: escrowHash,
-    sendTransaction,
-    isPending: isEscrowPending,
-    error: escrowError,
-    reset: resetEscrow
-  } = useSendTransaction()
-
-  const {
-    isLoading: isEscrowConfirming,
-    isSuccess: isEscrowSuccess
-  } = useWaitForTransactionReceipt({ hash: escrowHash })
-
-  // Contract bet transaction (SECOND TRANSACTION - only after tax is confirmed)
+  // Single contract bet transaction
   const { 
-    data: betHash, 
+    data: hash, 
     writeContract, 
-    isPending: isBetPending,
-    error: betError,
-    reset: resetBet
+    isPending,
+    error,
+    reset
   } = useWriteContract()
   
   const { 
-    isLoading: isBetConfirming, 
-    isSuccess: isBetSuccess 
-  } = useWaitForTransactionReceipt({ hash: betHash })
+    isLoading: isConfirming, 
+    isSuccess 
+  } = useWaitForTransactionReceipt({ hash })
 
   const [gasEstimate, setGasEstimate] = useState<string>('0.002')
-  const [betSplit, setBetSplit] = useState<{ pool: string; tax: string; total: string } | null>(null)
-  const [currentStep, setCurrentStep] = useState<'idle' | 'tax' | 'bet' | 'complete'>('idle')
   
   const betDataRef = useRef<{ 
     marketId: string; 
     contractMarketId: number;
     prediction: string; 
-    totalAmount: string;
-    poolAmount: string;
-    taxAmount: string;
+    amount: string;
   } | null>(null)
 
-  // STEP 1: After escrow tax transaction is confirmed, proceed to bet placement
-  useEffect(() => {
-    const handleTaxSuccess = async () => {
-      if (isEscrowSuccess && escrowHash && address && betDataRef.current && currentStep === 'tax') {
-        try {
-          // Persist escrow tax transaction record
-          await persistTransaction({
-            userAddress: address,
-            type: 'escrow_tax',
-            transactionHash: escrowHash,
-            status: 'success',
-            chainId,
-            value: betDataRef.current.taxAmount,
-            metadata: JSON.stringify({
-              marketId: betDataRef.current.marketId,
-              escrowWallet: ESCROW_WALLET_ADDRESS,
-              taxRate: TAX_CONFIG.TAX_RATE_PERCENT,
-            }),
-          })
-          
-          toast({
-            title: "Tax Payment Confirmed",
-            description: `Step 2/2: Placing your bet on the contract...`,
-          })
-
-          setCurrentStep('bet')
-
-          // Now place the bet on the contract
-          // Note: Contract expects integer market ID, but we store UUID in database
-          // For now, we'll need to map UUID to contract market ID
-          // This is a temporary workaround until contract integration is updated
-          const contractMarketId = betDataRef.current.contractMarketId || 0
-          const prediction = betDataRef.current.prediction === 'yes'
-          
-          writeContract({
-            address: getContractAddress(chainId),
-            abi: PREDICTION_MARKET_ABI,
-            functionName: 'placeBet',
-            args: [BigInt(contractMarketId), prediction],
-            value: BigInt(betDataRef.current.poolAmount), // 99% goes to the betting pool
-          })
-        } catch (error) {
-          console.error('Failed to persist tax or place bet:', error)
-          // Still try to place the bet even if persistence failed
-          try {
-            const contractMarketId = betDataRef.current.contractMarketId || 0
-            const prediction = betDataRef.current.prediction === 'yes'
-            
-            writeContract({
-              address: getContractAddress(chainId),
-              abi: PREDICTION_MARKET_ABI,
-              functionName: 'placeBet',
-              args: [BigInt(contractMarketId), prediction],
-              value: BigInt(betDataRef.current.poolAmount),
-            })
-          } catch (betErr) {
-            console.error('Failed to place bet after tax payment:', betErr)
-            toast({
-              title: "Error Placing Bet",
-              description: "Tax was paid but bet placement failed. Please contact support for a refund.",
-              variant: "destructive",
-            })
-            // Mark for refund
-            await markForRefund(escrowHash, betDataRef.current.marketId)
-            cleanup()
-          }
-        }
-      }
-    }
-    
-    handleTaxSuccess()
-  }, [isEscrowSuccess, escrowHash, address, chainId, toast, writeContract, currentStep])
-
-  // STEP 2: After bet transaction succeeds, persist the bet
+  // After bet transaction succeeds, persist the bet
   useEffect(() => {
     const persistBet = async () => {
-      if (isBetSuccess && betHash && address && betDataRef.current && currentStep === 'bet') {
+      if (isSuccess && hash && address && betDataRef.current) {
         try {
-          // Persist bet record with tax transaction hash
+          const formattedAmount = formatBNB(betDataRef.current.amount)
+          
+          // Persist bet record
           await apiRequest('POST', '/api/bets', {
             marketId: betDataRef.current.marketId,
             userAddress: address,
             prediction: betDataRef.current.prediction,
-            amount: betDataRef.current.poolAmount,
-            transactionHash: betHash,
-            taxTransactionHash: escrowHash, // Link to the tax transaction
-            taxStatus: 'confirmed',
+            amount: betDataRef.current.amount,
+            transactionHash: hash,
             chainId,
             claimed: false,
           })
@@ -174,18 +84,15 @@ export function usePlaceBet() {
           await persistTransaction({
             userAddress: address,
             type: 'bet',
-            transactionHash: betHash,
+            transactionHash: hash,
             status: 'success',
             chainId,
-            value: betDataRef.current.poolAmount,
+            value: betDataRef.current.amount,
             metadata: JSON.stringify({
               marketId: betDataRef.current.marketId,
+              contractMarketId: betDataRef.current.contractMarketId,
               prediction: betDataRef.current.prediction,
-              totalBetAmount: betDataRef.current.totalAmount,
-              poolAmount: betDataRef.current.poolAmount,
-              taxAmount: betDataRef.current.taxAmount,
-              taxTransactionHash: escrowHash,
-              escrowWallet: ESCROW_WALLET_ADDRESS,
+              amount: betDataRef.current.amount,
             }),
           })
           
@@ -196,17 +103,14 @@ export function usePlaceBet() {
           
           toast({
             title: "Bet Placed Successfully!",
-            description: `Your bet of ${betSplit?.pool} BNB has been placed. Tax of ${betSplit?.tax} BNB was collected.`,
+            description: `Your bet of ${formattedAmount} BNB has been placed. Fees are handled automatically on-chain.`,
           })
-
-          setCurrentStep('complete')
         } catch (error) {
           console.error('Failed to persist bet:', error)
           toast({
             title: "Bet Complete",
             description: "Bet placed successfully on blockchain.",
           })
-          setCurrentStep('complete')
         } finally {
           cleanup()
         }
@@ -214,75 +118,27 @@ export function usePlaceBet() {
     }
     
     persistBet()
-  }, [isBetSuccess, betHash, escrowHash, address, chainId, toast, currentStep, betSplit])
+  }, [isSuccess, hash, address, chainId, toast])
 
-  // Handle escrow tax error (STEP 1 fails)
+  // Handle bet errors
   useEffect(() => {
-    if (escrowError && currentStep === 'tax') {
-      const errorMsg = parseBlockchainError(escrowError)
+    if (error) {
+      const errorMsg = parseBlockchainError(error)
       toast({
-        title: "Tax Payment Failed",
-        description: `Unable to collect platform tax: ${errorMsg}. Your bet was not placed.`,
+        title: "Transaction Failed",
+        description: errorMsg,
         variant: "destructive",
       })
       cleanup()
     }
-  }, [escrowError, toast, currentStep])
-
-  // Handle bet error (STEP 2 fails - tax already paid!)
-  useEffect(() => {
-    const handleBetError = async () => {
-      if (betError && currentStep === 'bet' && escrowHash && betDataRef.current) {
-        const errorMsg = parseBlockchainError(betError)
-        toast({
-          title: "Bet Transaction Failed",
-          description: `Tax was paid but bet failed: ${errorMsg}. You will be refunded. Please contact support.`,
-          variant: "destructive",
-        })
-        
-        // Mark this transaction for refund since tax was paid but bet failed
-        await markForRefund(escrowHash, betDataRef.current.marketId)
-        cleanup()
-      }
-    }
-    
-    handleBetError()
-  }, [betError, toast, currentStep, escrowHash])
+  }, [error, toast])
 
   /**
-   * Helper function to mark a failed bet for refund
-   */
-  const markForRefund = async (taxHash: string, marketId: string) => {
-    try {
-      if (!address) return
-      
-      // Create a bet record marked as refund-eligible
-      await apiRequest('POST', '/api/bets', {
-        marketId: marketId,
-        userAddress: address,
-        prediction: betDataRef.current?.prediction || 'yes',
-        amount: '0', // No bet was actually placed
-        transactionHash: taxHash, // Use tax transaction hash as reference
-        taxTransactionHash: taxHash,
-        taxStatus: 'confirmed',
-        chainId,
-        claimed: false,
-        refundEligible: true,
-      })
-    } catch (error) {
-      console.error('Failed to mark for refund:', error)
-    }
-  }
-
-  /**
-   * Clean up state after transaction sequence completes or fails
+   * Clean up state after transaction completes or fails
    */
   const cleanup = () => {
     betDataRef.current = null
-    setBetSplit(null)
-    setCurrentStep('idle')
-    resetBet()
-    resetEscrow()
+    reset()
   }
 
   const placeBet = async (
@@ -319,29 +175,18 @@ export function usePlaceBet() {
       return
     }
 
-    // Calculate bet split (99% to pool, 1% to escrow)
-    const totalBetWei = toBNBWei(amount)
-    const split = calculateBetSplit(totalBetWei)
-    const formatted = formatBetSplit(totalBetWei)
-    setBetSplit({
-      total: formatted.total,
-      pool: formatted.pool,
-      tax: formatted.tax,
-    })
-
-    // Calculate total cost including gas for both transactions
-    const costBreakdown = calculateTotalBetCost(
-      totalBetWei,
-      GAS_LIMITS.PLACE_BET,
-      BigInt(21000) // Standard transfer gas
-    )
+    // Convert bet amount to Wei
+    const betAmountWei = toBNBWei(amount)
     
-    // Check sufficient balance for both transactions + gas
+    // Calculate total cost including gas (single transaction now)
+    const gasEstimateWei = estimateGasCost(GAS_LIMITS.PLACE_BET).gasCostWei
+    
+    // Check sufficient balance for transaction + gas
     if (balance) {
       const balanceCheck = checkSufficientBalance(
         balance.value,
-        totalBetWei,
-        costBreakdown.totalGas
+        betAmountWei,
+        gasEstimateWei
       )
       
       if (!balanceCheck.hasBalance) {
@@ -354,59 +199,61 @@ export function usePlaceBet() {
       }
     }
 
-    // Estimate gas cost for display (both transactions)
-    const totalGasCost = estimateGasCost(costBreakdown.totalGas)
-    setGasEstimate(totalGasCost.gasCostBNB)
+    // Estimate gas cost for display
+    const gasCost = estimateGasCost(GAS_LIMITS.PLACE_BET)
+    setGasEstimate(gasCost.gasCostBNB)
 
-    // Store bet data for persistence after transactions succeed
-    // Note: We need to fetch the market to get its contractMarketId for blockchain interaction
-    // The marketId parameter is the UUID from the database
-    betDataRef.current = {
-      marketId: marketId, // Store UUID for database persistence
-      contractMarketId: 0, // Will be populated below if market has blockchain contract ID
-      prediction: prediction ? 'yes' : 'no',
-      totalAmount: totalBetWei.toString(),
-      poolAmount: split.poolAmount.toString(),
-      taxAmount: split.taxAmount.toString(),
-    }
-
-    // Fetch market to get contractMarketId if available
+    // Fetch market to get contractMarketId
+    let contractMarketId: number
     try {
       const marketResponse = await fetch(`/api/markets/${marketId}`)
       if (marketResponse.ok) {
         const marketData = await marketResponse.json()
-        if (marketData.contractMarketId) {
-          betDataRef.current.contractMarketId = marketData.contractMarketId
-        }
+        contractMarketId = marketData.contractMarketId
+      } else {
+        throw new Error('Failed to fetch market data')
       }
     } catch (err) {
-      console.warn('Could not fetch market contractMarketId:', err)
-    }
-
-    // Validate that market has been deployed on-chain
-    if (!betDataRef.current.contractMarketId || betDataRef.current.contractMarketId === 0) {
-      betDataRef.current = null
-      setBetSplit(null)
+      console.error('Could not fetch market contractMarketId:', err)
       toast({
-        title: "Market Not Deployed",
-        description: "This market has not been deployed on the blockchain yet. Only deployed markets accept bets. Live sports markets from TheOddsAPI are for demonstration purposes only.",
+        title: "Market Error",
+        description: "Unable to fetch market information. Please try again.",
         variant: "destructive",
       })
       return
     }
 
-    try {
-      setCurrentStep('tax')
-      
+    // Validate that market has been deployed on-chain
+    if (!contractMarketId || contractMarketId === 0) {
       toast({
-        title: "Step 1/2: Paying Platform Tax",
-        description: `Sending ${formatted.tax} BNB (${TAX_CONFIG.TAX_RATE_PERCENT}%) to escrow wallet...`,
+        title: "Market Not Deployed",
+        description: "This market has not been deployed on the blockchain yet. Only deployed markets accept bets.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    // Store bet data for persistence after transaction succeeds
+    betDataRef.current = {
+      marketId: marketId,
+      contractMarketId: contractMarketId,
+      prediction: prediction ? 'yes' : 'no',
+      amount: betAmountWei.toString(),
+    }
+
+    try {
+      toast({
+        title: "Placing Bet",
+        description: `Submitting your bet of ${amount} BNB. Fees will be handled automatically on-chain.`,
       })
 
-      // CRITICAL: Send tax FIRST
-      sendTransaction({
-        to: ESCROW_WALLET_ADDRESS,
-        value: split.taxAmount, // 1% goes to escrow
+      // Place bet with single transaction - contract handles all fees
+      writeContract({
+        address: getContractAddress(chainId),
+        abi: PREDICTION_MARKET_ABI,
+        functionName: 'placeBet',
+        args: [BigInt(contractMarketId), prediction],
+        value: betAmountWei,
       })
     } catch (error) {
       cleanup()
@@ -420,14 +267,11 @@ export function usePlaceBet() {
 
   return {
     placeBet,
-    isLoading: isEscrowPending || isEscrowConfirming || isBetPending || isBetConfirming,
-    isSuccess: isBetSuccess && isEscrowSuccess,
-    txHash: betHash,
-    escrowTxHash: escrowHash,
+    isLoading: isPending || isConfirming,
+    isSuccess,
+    txHash: hash,
     gasEstimate,
-    betSplit,
-    currentStep,
-    error: betError || escrowError,
+    error,
   }
 }
 
@@ -953,5 +797,121 @@ export function useUserBets() {
     isLoading,
     error,
     refetch,
+  }
+}
+
+/**
+ * Hook to check if a user is registered
+ */
+export function useIsRegistered(userAddress?: string) {
+  const { address } = useAccount()
+  const chainId = useChainId()
+  const checkAddress = userAddress || address
+  
+  const { data: isRegistered, isLoading, error, refetch } = useReadContract({
+    address: getContractAddress(chainId),
+    abi: PREDICTION_MARKET_ABI,
+    functionName: 'isUserRegistered',
+    args: checkAddress ? [checkAddress as `0x${string}`] : undefined,
+    query: {
+      enabled: !!checkAddress,
+    }
+  })
+
+  return {
+    isRegistered: isRegistered as boolean,
+    isLoading,
+    error,
+    refetch,
+  }
+}
+
+/**
+ * Hook to get the registration fee in BNB
+ */
+export function useRegistrationFee() {
+  const chainId = useChainId()
+  
+  const { data: feeInWei, isLoading, error } = useReadContract({
+    address: getContractAddress(chainId),
+    abi: PREDICTION_MARKET_ABI,
+    functionName: 'getRegistrationFeeInBNB',
+  })
+
+  return {
+    feeInWei: feeInWei as bigint,
+    feeInBNB: feeInWei ? formatEther(feeInWei as bigint) : '0',
+    isLoading,
+    error,
+  }
+}
+
+/**
+ * Hook to register a user (pay $2 USD equivalent in BNB)
+ */
+export function useRegisterUser() {
+  const { address } = useAccount()
+  const chainId = useChainId()
+  const { toast } = useToast()
+  
+  const { feeInWei } = useRegistrationFee()
+  
+  const { 
+    data: hash, 
+    writeContract, 
+    isPending,
+    error,
+    reset
+  } = useWriteContract()
+  
+  const { 
+    isLoading: isConfirming, 
+    isSuccess 
+  } = useWaitForTransactionReceipt({ hash })
+
+  const registerUser = async () => {
+    if (!address) {
+      toast({
+        title: "Wallet Not Connected",
+        description: "Please connect your wallet first.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    if (!feeInWei) {
+      toast({
+        title: "Registration Fee Not Available",
+        description: "Unable to fetch registration fee. Please try again.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    try {
+      writeContract({
+        address: getContractAddress(chainId),
+        abi: PREDICTION_MARKET_ABI,
+        functionName: 'registerUser',
+        value: feeInWei,
+        gas: GAS_LIMITS.REGISTER_USER,
+      })
+    } catch (err: any) {
+      const errorMessage = parseBlockchainError(err)
+      toast({
+        title: "Registration Failed",
+        description: errorMessage,
+        variant: "destructive",
+      })
+    }
+  }
+
+  return {
+    registerUser,
+    isLoading: isPending || isConfirming,
+    isSuccess,
+    txHash: hash,
+    error,
+    reset,
   }
 }

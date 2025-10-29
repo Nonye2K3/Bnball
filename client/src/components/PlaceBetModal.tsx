@@ -21,7 +21,7 @@ import { useToast } from "@/hooks/use-toast";
 import { usePlaceBet } from "@/hooks/usePredictionMarket";
 import { useWeb3 } from "@/hooks/useWeb3";
 import { validateBetAmount, toBNBWei, formatBetSplit } from "@/utils/blockchain";
-import { getExplorerUrl, BET_CONFIG, ESCROW_WALLET_ADDRESS, TAX_CONFIG, getAddressExplorerUrl } from "@/lib/contractConfig";
+import { getExplorerUrl, BET_CONFIG, FEE_CONFIG, getAddressExplorerUrl } from "@/lib/contractConfig";
 import { useChainId } from "wagmi";
 import { ConfigurationAlert } from "./ConfigurationAlert";
 import type { PredictionMarket } from "@shared/schema";
@@ -44,10 +44,7 @@ export function PlaceBetModal({ open, onOpenChange, market }: PlaceBetModalProps
     isLoading: isPlacingBet, 
     isSuccess: betSuccess,
     txHash: betTxHash,
-    escrowTxHash,
-    gasEstimate,
-    betSplit,
-    currentStep
+    gasEstimate
   } = usePlaceBet();
 
   const yesOdds = parseFloat(market.yesOdds);
@@ -56,7 +53,8 @@ export function PlaceBetModal({ open, onOpenChange, market }: PlaceBetModalProps
   const calculatePotentialReturn = () => {
     if (!betAmount || isNaN(parseFloat(betAmount))) return "0.00";
     const amount = parseFloat(betAmount);
-    const poolAmount = amount * TAX_CONFIG.BET_POOL_DECIMAL;
+    // Contract automatically deducts 10% platform fee + 2% creator fee = 12% total fees
+    const poolAmount = amount * FEE_CONFIG.BET_POOL_DECIMAL;
     const odds = selectedOption === "yes" ? yesOdds : noOdds;
     const multiplier = 100 / odds;
     return (poolAmount * multiplier).toFixed(3);
@@ -64,13 +62,13 @@ export function PlaceBetModal({ open, onOpenChange, market }: PlaceBetModalProps
 
   const getBetBreakdown = () => {
     if (!betAmount || isNaN(parseFloat(betAmount))) {
-      return { total: "0", pool: "0", tax: "0" };
+      return { total: "0", pool: "0", platformFee: "0", creatorFee: "0", totalFees: "0" };
     }
     try {
       const totalWei = toBNBWei(betAmount);
       return formatBetSplit(totalWei);
     } catch {
-      return { total: "0", pool: "0", tax: "0" };
+      return { total: "0", pool: "0", platformFee: "0", creatorFee: "0", totalFees: "0" };
     }
   };
 
@@ -125,11 +123,10 @@ export function PlaceBetModal({ open, onOpenChange, market }: PlaceBetModalProps
     if (!isConnected) return "Connect Wallet to Bet";
     if (market.status !== 'live') return "Market Not Active";
     
-    if (currentStep === 'tax') return "Step 1/2: Confirming Tax Payment...";
-    if (currentStep === 'bet') return "Step 2/2: Confirming Bet Placement...";
-    if (currentStep === 'complete') return "Bet Placed Successfully!";
+    if (isPlacingBet) return "Confirming Transaction...";
+    if (betSuccess) return "Bet Placed Successfully!";
     
-    return "Confirm Bet (2 Transactions Required)";
+    return "Place Bet";
   };
 
   const isButtonDisabled = () => {
@@ -172,65 +169,6 @@ export function PlaceBetModal({ open, onOpenChange, market }: PlaceBetModalProps
 
         <div className="space-y-4 mt-4">
           <ConfigurationAlert variant="compact" showTitle={false} />
-          
-          {/* Transaction Progress Indicator */}
-          {currentStep !== 'idle' && (
-            <div className="bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-blue-500/20 p-4 rounded-lg space-y-3">
-              <div className="flex items-center justify-between mb-2">
-                <div className="text-xs font-semibold text-blue-600 dark:text-blue-400 flex items-center gap-2">
-                  PROCESSING YOUR BET
-                </div>
-              </div>
-              
-              <div className="space-y-2">
-                {/* Step 1: Processing */}
-                <div className={`flex items-center gap-3 p-2 rounded ${
-                  currentStep === 'tax' ? 'bg-blue-500/20' : 
-                  (currentStep === 'bet' || currentStep === 'complete') ? 'bg-green-500/10' : 
-                  'bg-muted/30'
-                }`}>
-                  <div className="flex-shrink-0">
-                    {currentStep === 'tax' ? (
-                      <Loader2 className="w-4 h-4 animate-spin text-blue-500" />
-                    ) : (currentStep === 'bet' || currentStep === 'complete') ? (
-                      <CheckCircle2 className="w-4 h-4 text-green-500" />
-                    ) : (
-                      <div className="w-4 h-4 rounded-full border-2 border-muted-foreground" />
-                    )}
-                  </div>
-                  <div className="flex-1">
-                    <div className="text-xs font-semibold">Step 1/2: Confirming Transaction</div>
-                    <div className="text-xs text-muted-foreground">
-                      Processing your bet...
-                    </div>
-                  </div>
-                </div>
-                
-                {/* Step 2: Placing Bet */}
-                <div className={`flex items-center gap-3 p-2 rounded ${
-                  currentStep === 'bet' ? 'bg-blue-500/20' : 
-                  currentStep === 'complete' ? 'bg-green-500/10' : 
-                  'bg-muted/30'
-                }`}>
-                  <div className="flex-shrink-0">
-                    {currentStep === 'bet' ? (
-                      <Loader2 className="w-4 h-4 animate-spin text-blue-500" />
-                    ) : currentStep === 'complete' ? (
-                      <CheckCircle2 className="w-4 h-4 text-green-500" />
-                    ) : (
-                      <div className="w-4 h-4 rounded-full border-2 border-muted-foreground" />
-                    )}
-                  </div>
-                  <div className="flex-1">
-                    <div className="text-xs font-semibold">Step 2/2: Finalizing Bet</div>
-                    <div className="text-xs text-muted-foreground">
-                      Submitting to betting pool...
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
           
           {/* Prediction Options */}
           <div className="grid grid-cols-2 gap-3">
@@ -363,25 +301,6 @@ export function PlaceBetModal({ open, onOpenChange, market }: PlaceBetModalProps
             </div>
           )}
 
-          {escrowTxHash && (
-            <div className="flex items-start gap-2 p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
-              <Info className="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" />
-              <div className="flex-1">
-                <p className="text-xs text-muted-foreground mb-1">
-                  Escrow tax transaction submitted successfully!
-                </p>
-                <a 
-                  href={getExplorerUrl(chainId, escrowTxHash)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-xs text-blue-500 hover:underline flex items-center gap-1"
-                  data-testid="link-escrow-tx"
-                >
-                  View Escrow Tx on BSCScan <ExternalLink className="w-3 h-3" />
-                </a>
-              </div>
-            </div>
-          )}
 
           {/* Place Bet Button */}
           <Button 

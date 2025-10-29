@@ -242,8 +242,8 @@ export default function CreateMarket() {
                   <div className="text-sm text-muted-foreground">
                     <p className="font-semibold text-foreground mb-1">Market Creator Requirements & Benefits:</p>
                     <ul className="space-y-1 text-xs">
-                      <li>• Requires 1.0 BNB stake (refunded when market resolves)</li>
-                      <li>• Earn 0.5% fee on all trading volume</li>
+                      <li>• Requires 0.1 BNB stake (refunded when market resolves)</li>
+                      <li>• Earn 2% fee on all trading volume</li>
                       <li>• Build reputation as a trusted market creator</li>
                       <li>• Minimum betting amount for participants: 0.01 BNB</li>
                     </ul>
