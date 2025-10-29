@@ -85,6 +85,11 @@ Preferred communication style: Simple, everyday language.
 - `GET /api/transactions/:userAddress` - Get transaction history for a wallet
 - `GET /api/markets` - Get all prediction markets
 - `GET /api/markets/:id` - Get specific market details
+- `POST /api/markets/sync` - Sync live sports data from TheOddsAPI
+- `POST /api/markets/sync-football` - Sync live football data from API-Football
+- `GET /api/football/live` - Get live football fixtures
+- `GET /api/football/upcoming?days=7` - Get upcoming football fixtures
+- `GET /api/football/standings/:leagueId?season=2024` - Get league standings
 - `GET /api/social/win-data/:betId` - Get win data for sharing (market, stake, winnings, multiplier)
 - `POST /api/social/share-to-x` - Post win to X/Twitter with image (requires X API credentials)
 
@@ -123,6 +128,7 @@ Preferred communication style: Simple, everyday language.
    - Betting data: totalPool, yesOdds, noOdds, participants
    - Timeline: startTime, deadline
    - Resolution: resolutionMethod, result, resolutionData
+   - Sports data: oddsApiEventId (TheOddsAPI), apiFootballFixtureId (API-Football), homeTeam, awayTeam, sport, league
 
 3. **bets**
    - User betting records linked to blockchain transactions
@@ -192,10 +198,18 @@ Preferred communication style: Simple, everyday language.
 - Bet and transaction persistence to database after on-chain confirmation
 
 **Integration Points:**
-- Escrow wallet for 1% platform tax collection
+- Escrow wallet for 1% platform tax collection (off-chain, frontend-enforced)
 - Market creation requires exact stake payment (1.0 BNB)
-- Creator fee distribution (0.5% of total pool)
+- Creator fee distribution (0.5% of total pool, on-chain)
 - Dispute resolution mechanism (centralized owner control - future: DAO governance)
+
+**⚠️ Fee Structure (CRITICAL - See SMART_CONTRACT_FEES.md):**
+- **On-Chain (Smart Contract)**: 0.5% creator fee only (deducted at resolution, paid to market creator)
+- **Off-Chain (Frontend)**: 1% platform tax sent to escrow wallet (separate transaction before bet)
+- **User Experience**: Two transactions per bet (1% to escrow + 99% to contract pools)
+- **Total Fees**: 1% platform + 0.5% creator = 1.5% total (split between off-chain and on-chain)
+- **Winner Payouts**: From 99.5% of pool (after 0.5% creator fee)
+- **Documentation**: See `SMART_CONTRACT_FEES.md` for full analysis and options
 
 ## External Dependencies
 
@@ -206,10 +220,14 @@ Preferred communication style: Simple, everyday language.
 - WalletConnect for wallet connections
 - Neon Database (PostgreSQL provider via @neondatabase/serverless)
 
-**Oracle Services (Planned):**
-- Chainlink Sports Data Feeds
-- Custom AI verification system
-- Community governance contracts
+**Sports Data Services:**
+- **TheOddsAPI** - Live sports data and odds for NBA, NFL, MLB, Soccer, and more
+- **API-Football** - Comprehensive football/soccer data including live fixtures, standings, and statistics
+  - Supported leagues: Premier League, La Liga, Bundesliga, Serie A, Ligue 1, UEFA Champions League
+  - Features: Live match data, upcoming fixtures, league standings, head-to-head stats
+- **Chainlink Sports Oracle** (planned) - Decentralized oracle for result verification
+- **Custom AI verification system** (planned)
+- **Community governance contracts** (planned)
 
 **Development Tools:**
 - Replit-specific plugins (@replit/vite-plugin-runtime-error-modal, cartographer, dev-banner)
