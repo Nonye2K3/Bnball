@@ -4,6 +4,15 @@ import { Link } from "wouter";
 import { motion } from "framer-motion";
 import { SoccerBall3D } from "./SoccerBall3D";
 import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { formatEther } from "viem";
+
+interface PlatformStats {
+  totalVolume: string;
+  liveMarketsCount: number;
+  activeUsersCount: number;
+  totalPrizePool: string;
+}
 
 export function Hero() {
   const [stats, setStats] = useState({
@@ -12,14 +21,21 @@ export function Hero() {
     users: 0,
     pool: 0
   });
+  
+  const { data: platformStats } = useQuery<PlatformStats>({
+    queryKey: ['/api/stats'],
+    refetchInterval: 30000, // Refetch every 30 seconds
+  });
 
-  // Animated stats ticker
+  // Animated stats ticker - use real data from API
   useEffect(() => {
+    if (!platformStats) return;
+    
     const targetStats = {
-      volume: 2847532,
-      markets: 168,
-      users: 12456,
-      pool: 485920
+      volume: parseFloat(formatEther(BigInt(platformStats.totalVolume || '0'))) * 350, // BNB price approximation
+      markets: platformStats.liveMarketsCount,
+      users: platformStats.activeUsersCount,
+      pool: parseFloat(formatEther(BigInt(platformStats.totalPrizePool || '0')))
     };
 
     const duration = 2000;
@@ -41,7 +57,7 @@ export function Hero() {
     }, interval);
 
     return () => clearInterval(timer);
-  }, []);
+  }, [platformStats]);
 
   return (
     <div className="relative min-h-[95vh] flex items-center justify-center overflow-hidden">

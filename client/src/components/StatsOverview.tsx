@@ -2,6 +2,15 @@ import { Card } from "@/components/ui/card";
 import { TrendingUp, Users, Zap, DollarSign } from "lucide-react";
 import { motion, useInView } from "framer-motion";
 import { useRef, useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { formatEther } from "viem";
+
+interface PlatformStats {
+  totalVolume: string;
+  liveMarketsCount: number;
+  activeUsersCount: number;
+  totalPrizePool: string;
+}
 
 interface StatCardProps {
   icon: React.ReactNode;
@@ -115,6 +124,28 @@ function StatCard({ icon, label, value, change, index }: StatCardProps) {
 export function StatsOverview() {
   const headerRef = useRef(null);
   const isHeaderInView = useInView(headerRef, { once: true });
+  
+  const { data: platformStats } = useQuery<PlatformStats>({
+    queryKey: ['/api/stats'],
+    refetchInterval: 30000, // Refetch every 30 seconds
+  });
+  
+  // Calculate formatted values from real-time data
+  const totalVolumeUSD = platformStats 
+    ? `$${(parseFloat(formatEther(BigInt(platformStats.totalVolume || '0'))) * 350 / 1000000).toFixed(1)}M`
+    : '$0';
+  
+  const activeUsers = platformStats
+    ? platformStats.activeUsersCount.toLocaleString()
+    : '0';
+  
+  const marketsCreated = platformStats
+    ? platformStats.liveMarketsCount.toLocaleString()
+    : '0';
+    
+  const totalPrizePoolBNB = platformStats
+    ? `${parseFloat(formatEther(BigInt(platformStats.totalPrizePool || '0'))).toLocaleString()} BNB`
+    : '0 BNB';
 
   return (
     <div className="py-16 bg-muted/30">
@@ -138,30 +169,26 @@ export function StatsOverview() {
           <StatCard
             index={0}
             icon={<DollarSign className="w-6 h-6 text-primary" />}
-            label="Total Value Locked"
-            value="$2.4M"
-            change="+12.5%"
+            label="Total Volume"
+            value={totalVolumeUSD}
           />
           <StatCard
             index={1}
             icon={<Users className="w-6 h-6 text-primary" />}
             label="Active Users"
-            value="12,453"
-            change="+8.2%"
+            value={activeUsers}
           />
           <StatCard
             index={2}
             icon={<Zap className="w-6 h-6 text-primary" />}
-            label="Markets Created"
-            value="1,247"
-            change="+23.1%"
+            label="Live Markets"
+            value={marketsCreated}
           />
           <StatCard
             index={3}
             icon={<TrendingUp className="w-6 h-6 text-primary" />}
-            label="Total Volume"
-            value="$18.7M"
-            change="+15.4%"
+            label="Prize Pool"
+            value={totalPrizePoolBNB}
           />
         </div>
       </div>
