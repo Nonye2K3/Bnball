@@ -6,6 +6,10 @@ import { setupVite, serveStatic, log } from "./vite";
 
 const app = express();
 
+// Enable trust proxy for Replit deployment
+// This allows Express to correctly identify client IPs behind proxies/load balancers
+app.set('trust proxy', 1);
+
 // CORS configuration - allow requests from frontend domain
 // In development with Vite serving on same origin, CORS is already handled by Vite proxy
 // Only apply CORS restrictions in production
