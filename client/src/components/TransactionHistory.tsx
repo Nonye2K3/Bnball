@@ -9,6 +9,7 @@ import { useState } from "react";
 import { formatDistanceToNow } from "date-fns";
 import { formatEther } from "viem";
 import { useQuery } from "@tanstack/react-query";
+import { getExplorerUrl } from "@/lib/contractConfig";
 import type { Transaction as DBTransaction } from "@shared/schema";
 
 type TransactionType = "All" | "Bets" | "Claims" | "Markets";
@@ -17,6 +18,7 @@ interface Transaction {
   id: string;
   type: "Bet" | "Claim" | "Market";
   hash: string;
+  chainId: number;
   amount: string;
   status: "Pending" | "Success" | "Failed";
   timestamp: Date;
@@ -66,6 +68,7 @@ export function TransactionHistory() {
           id: tx.id,
           type,
           hash: tx.transactionHash,
+          chainId: tx.chainId,
           amount: formatEther(BigInt(tx.value)),
           status,
           timestamp: new Date(tx.timestamp),
@@ -84,14 +87,6 @@ export function TransactionHistory() {
 
   const visibleTransactions = filteredTransactions.slice(0, visibleCount);
   const hasMore = visibleCount < filteredTransactions.length;
-
-  const getBSCScanUrl = (hash: string) => {
-    if (!chain) return "";
-    const baseUrl = chain.id === 56 
-      ? "https://bscscan.com" 
-      : "https://testnet.bscscan.com";
-    return `${baseUrl}/tx/${hash}`;
-  };
 
   const getTypeColor = (type: string) => {
     switch (type) {
@@ -204,20 +199,18 @@ export function TransactionHistory() {
                       </Badge>
                     </div>
                     
-                    <div className="flex items-center gap-2 mb-1">
-                      <code className="text-xs font-mono text-muted-foreground truncate" data-testid="text-tx-hash">
+                    <a
+                      href={getExplorerUrl(tx.chainId, tx.hash)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-1 hover:underline mb-1"
+                      data-testid={`link-txn-${tx.hash.slice(0, 8)}`}
+                    >
+                      <code className="text-xs font-mono text-muted-foreground">
                         {tx.hash.slice(0, 10)}...{tx.hash.slice(-8)}
                       </code>
-                      <a
-                        href={getBSCScanUrl(tx.hash)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-primary hover:underline"
-                        data-testid={`link-bscscan-${index}`}
-                      >
-                        <ExternalLink className="w-3 h-3" />
-                      </a>
-                    </div>
+                      <ExternalLink className="w-3 h-3 text-muted-foreground" />
+                    </a>
                     
                     <div className="flex items-center gap-4 text-xs text-muted-foreground">
                       <div className="flex items-center gap-1">

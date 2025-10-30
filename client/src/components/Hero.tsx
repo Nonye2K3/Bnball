@@ -6,6 +6,7 @@ import { SoccerBall3D } from "./SoccerBall3D";
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { formatEther } from "viem";
+import { useBNBPrice } from "@/hooks/useBNBPrice";
 
 interface PlatformStats {
   totalVolume: string;
@@ -24,15 +25,18 @@ export function Hero() {
   
   const { data: platformStats } = useQuery<PlatformStats>({
     queryKey: ['/api/stats'],
-    refetchInterval: 30000, // Refetch every 30 seconds
+    refetchInterval: 30000,
   });
 
-  // Animated stats ticker - use real data from API
+  const { data: bnbPrice, isLoading: isPriceLoading, isError: isPriceError } = useBNBPrice();
+
   useEffect(() => {
     if (!platformStats) return;
     
+    const bnbPriceValue = bnbPrice || 350;
+    
     const targetStats = {
-      volume: parseFloat(formatEther(BigInt(platformStats.totalVolume || '0'))) * 350, // BNB price approximation
+      volume: parseFloat(formatEther(BigInt(platformStats.totalVolume || '0'))) * bnbPriceValue,
       markets: platformStats.liveMarketsCount,
       users: platformStats.activeUsersCount,
       pool: parseFloat(formatEther(BigInt(platformStats.totalPrizePool || '0')))
@@ -47,17 +51,17 @@ export function Hero() {
       step++;
       const progress = step / steps;
       setStats({
-        volume: Math.round(targetStats.volume * progress * 100) / 100, // Round to 2 decimals
+        volume: Math.round(targetStats.volume * progress * 100) / 100,
         markets: Math.round(targetStats.markets * progress),
         users: Math.round(targetStats.users * progress),
-        pool: Math.round(targetStats.pool * progress * 100) / 100 // Round to 2 decimals
+        pool: Math.round(targetStats.pool * progress * 100) / 100
       });
 
       if (step >= steps) clearInterval(timer);
     }, interval);
 
     return () => clearInterval(timer);
-  }, [platformStats]);
+  }, [platformStats, bnbPrice]);
 
   return (
     <div className="relative min-h-[95vh] flex items-center justify-center overflow-hidden">
