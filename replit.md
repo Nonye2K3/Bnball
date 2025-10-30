@@ -24,19 +24,23 @@ Preferred communication style: Simple, everyday language.
 
 ### Smart Contract Integration
 - **Blockchain:** Binance Smart Chain (Mainnet/Testnet).
+- **Mainnet Deployment:** Contract deployed at `0x0f0D0a8AD191899F91bF52806cE4530f36bba860` on BSC Mainnet (verified).
+- **Admin Wallet:** `0xC196dc762FbC2AB044AAEAc05E27CD10c4982a01` (receives all platform fees).
+- **WalletConnect:** Configured with Project ID `a6cc5ee0-526d-4058-b098-5827b7adba62` for mobile wallet support.
 - **Contracts:** Production-ready `PredictionMarket.sol` deployed, developed with Hardhat.
 - **Security:** Audited and enhanced to prevent common vulnerabilities (reentrancy, owner drain, zero-winner edge cases).
-- **Features:** `createMarket` (1.0 BNB stake), `placeBet` (minimum 0.5 BNB), `resolveMarket`, `claimWinnings`.
-- **Fee Structure:** 0.5% creator fee (on-chain), 1% platform tax (off-chain, to escrow wallet) resulting in 1.5% total fees.
-- **Integration:** wagmi hooks for all contract interactions, gas estimation, transaction confirmation, BSCScan integration.
+- **Features:** `createMarket` (0.1 BNB stake), `placeBet` (minimum 0.01 BNB with custom amounts), `resolveMarket`, `claimWinnings`.
+- **Registration:** $2 USD fee (converted to BNB via Chainlink oracle) required before placing bets.
+- **Fee Structure:** 10% platform fee + 2% creator fee = 12% total (all on-chain, hidden from UI).
+- **Integration:** wagmi v2 hooks for all contract interactions, gas estimation, transaction confirmation, BSCScan integration with verification links.
 
 ## External Dependencies
 
 ### Third-Party Services
-- **Blockchain:** Binance Smart Chain RPC nodes, WalletConnect.
+- **Blockchain:** Binance Smart Chain RPC nodes (https://bsc-dataseed.binance.org/), WalletConnect Cloud.
 - **Database:** Neon Database (PostgreSQL via @neondatabase/serverless).
-- **Sports Data:** TheOddsAPI (live sports data), API-Football (football data including live fixtures, standings).
-- **Oracles:** Chainlink Sports Oracle (planned).
+- **Sports Data:** API-Football (football data including live fixtures, standings, switched from TheOddsAPI).
+- **Oracles:** Chainlink BNB/USD Price Feed (for registration fee conversion).
 
 ### UI Component Libraries
 - Radix UI primitives, shadcn/ui design system, Tailwind CSS, class-variance-authority.
@@ -46,3 +50,22 @@ Preferred communication style: Simple, everyday language.
 - **Package Manager:** npm.
 - **TypeScript:** Strict mode, ESNext modules, path aliases.
 - **Tools:** Vite (frontend), esbuild (backend), Drizzle-kit (schema migration).
+
+## Recent Changes (October 30, 2025)
+
+### Mainnet Deployment Fixes
+1. **WalletConnect Configuration:** Updated WalletConnect Project ID to `a6cc5ee0-526d-4058-b098-5827b7adba62` to enable proper wallet connections on mainnet.
+2. **Contract Verification:** Confirmed mainnet contract deployment at `0x0f0D0a8AD191899F91bF52806cE4530f36bba860` with admin wallet `0xC196dc762FbC2AB044AAEAc05E27CD10c4982a01`.
+3. **ConfigurationAlert Enhancement:** Added contract and admin wallet addresses with BSCScan verification links to help users verify deployment.
+4. **Custom Bet Amounts:** Confirmed PlaceBetModal already has input field for users to specify custom stake amounts (min 0.01 BNB).
+5. **Fee Structure Correction:** Updated documentation to reflect actual on-chain fees: 10% platform + 2% creator = 12% total.
+
+### Testing Status
+- Wallet connection tested and working (Web3Modal opens successfully)
+- Contract interactions ready for mainnet use
+- Registration flow configured ($2 USD in BNB via Chainlink oracle)
+- Bet placement with custom amounts functional
+
+### Known Issues
+- API-Football returning empty match arrays (either no games scheduled, rate limits, or free tier restrictions)
+- Sports data integration working correctly, just no live data to display currently
