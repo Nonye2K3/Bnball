@@ -3,6 +3,9 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        VITE_WALLETCONNECT_PROJECT_ID: ${VITE_WALLETCONNECT_PROJECT_ID}
+        VITE_PREDICTION_MARKET_CONTRACT_MAINNET: ${VITE_PREDICTION_MARKET_CONTRACT_MAINNET}
     # NOTE: Do NOT put secret values here in source control. Use Coolify's
     # UI to set Secrets / Environment Variables for the app instead.
     environment:
@@ -10,7 +13,6 @@ services:
       PORT: 5000
       # FRONTEND_URL is used by the server CORS checks. Set to your deployed domain.
       FRONTEND_URL: ${SERVICE_URL_APP}
-      VITE_WALLETCONNECT_PROJECT_ID: ${WALLETCONNECT_PROJECT_ID}
       # Below are additional environment variables the app reads. Provide them
       # in Coolify as secrets (do not commit actual values):
       # DEPLOYER_PRIVATE_KEY: "<private key>"             # only if you run hardhat scripts in the same environment
