@@ -1,9 +1,9 @@
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { AlertCircle, CheckCircle, ExternalLink, Terminal } from "lucide-react";
+import { AlertCircle, CheckCircle, ExternalLink, Terminal, Info } from "lucide-react";
 import { useChainId } from "wagmi";
-import { isContractDeployed, getContractAddress } from "@/lib/contractConfig";
+import { isContractDeployed, getContractAddress, getAddressExplorerUrl, PLATFORM_FEE_RECIPIENT } from "@/lib/contractConfig";
 import { projectId } from "@/lib/web3Config";
 
 interface ConfigurationAlertProps {
@@ -84,8 +84,8 @@ export function ConfigurationAlert({ variant = "default", showTitle = true }: Co
       
       <AlertDescription>
         {allConfigured ? (
-          <div className="space-y-2">
-            <p className="text-sm">All systems are configured and ready:</p>
+          <div className="space-y-3">
+            <p className="text-sm">All systems are configured and ready for mainnet:</p>
             <div className="flex flex-wrap gap-2 mt-2">
               <Badge className="bg-green-500/10 text-green-500 border-green-500/20">
                 <CheckCircle className="w-3 h-3 mr-1" />
@@ -95,6 +95,46 @@ export function ConfigurationAlert({ variant = "default", showTitle = true }: Co
                 <CheckCircle className="w-3 h-3 mr-1" />
                 WalletConnect Configured
               </Badge>
+            </div>
+            <div className="bg-blue-500/10 border border-blue-500/20 p-3 rounded-lg space-y-2">
+              <div className="flex items-start gap-2">
+                <Info className="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" />
+                <div className="flex-1 space-y-2">
+                  <p className="text-xs font-semibold text-blue-500">Contract Information</p>
+                  <div className="space-y-1 text-xs">
+                    <div className="flex items-center gap-2">
+                      <span className="text-muted-foreground">Network:</span>
+                      <span className="font-mono font-semibold">{chainId === 56 ? 'BSC Mainnet' : 'BSC Testnet'}</span>
+                    </div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-muted-foreground">Contract:</span>
+                      <code className="bg-muted px-1.5 py-0.5 rounded font-mono text-xs">{getContractAddress(chainId)}</code>
+                      <a 
+                        href={getAddressExplorerUrl(chainId, getContractAddress(chainId))}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-500 hover:underline inline-flex items-center gap-1"
+                        data-testid="link-contract-bscscan"
+                      >
+                        View on BSCScan <ExternalLink className="w-3 h-3" />
+                      </a>
+                    </div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-muted-foreground">Admin Wallet:</span>
+                      <code className="bg-muted px-1.5 py-0.5 rounded font-mono text-xs">{PLATFORM_FEE_RECIPIENT}</code>
+                      <a 
+                        href={getAddressExplorerUrl(chainId, PLATFORM_FEE_RECIPIENT)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-500 hover:underline inline-flex items-center gap-1"
+                        data-testid="link-admin-wallet-bscscan"
+                      >
+                        View on BSCScan <ExternalLink className="w-3 h-3" />
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         ) : (
