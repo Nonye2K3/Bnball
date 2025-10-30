@@ -4,18 +4,36 @@ import { useRef, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { SiBinance } from "react-icons/si";
-
-const CONTRACT_ADDRESS = "0x...Deployment Pending";
+import { useQuery } from "@tanstack/react-query";
+import { useChainId } from "wagmi";
+import { getContractAddress, getAddressExplorerUrl } from "@/lib/contractConfig";
 
 export function TrustSection() {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: "-100px" });
   const [copied, setCopied] = useState(false);
+  const chainId = useChainId();
+  const contractAddress = getContractAddress(chainId);
+  
+  // Fetch real-time stats
+  const { data: stats } = useQuery<{ totalVolume: string; activeUsers: number; liveMarketsCount: number }>({
+    queryKey: ['/api/stats'],
+  });
 
   const handleCopy = () => {
-    navigator.clipboard.writeText(CONTRACT_ADDRESS);
+    navigator.clipboard.writeText(contractAddress);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+  
+  const formatTVL = (volume: string) => {
+    const val = parseFloat(volume);
+    if (val >= 1000000) {
+      return `$${(val / 1000000).toFixed(1)}M`;
+    } else if (val >= 1000) {
+      return `$${(val / 1000).toFixed(1)}K`;
+    }
+    return `$${val.toFixed(0)}`;
   };
 
   const trustFeatures = [
@@ -55,9 +73,24 @@ export function TrustSection() {
   ];
 
   const securityStats = [
-    { label: "Total Value Locked", value: "$2.8M", icon: TrendingUp, iconColor: "text-secondary" },
-    { label: "Transactions", value: "45K+", icon: Activity, iconColor: "text-primary" },
-    { label: "Uptime", value: "99.9%", icon: Check, iconColor: "text-secondary" }
+    { 
+      label: "Total Value Locked", 
+      value: stats ? formatTVL(stats.totalVolume) : "$0", 
+      icon: TrendingUp, 
+      iconColor: "text-secondary" 
+    },
+    { 
+      label: "Active Users", 
+      value: stats ? `${stats.activeUsers.toLocaleString()}+` : "0", 
+      icon: Activity, 
+      iconColor: "text-primary" 
+    },
+    { 
+      label: "Live Markets", 
+      value: stats ? stats.liveMarketsCount.toString() : "0", 
+      icon: Check, 
+      iconColor: "text-secondary" 
+    }
   ];
 
   return (
@@ -129,7 +162,7 @@ export function TrustSection() {
                 </p>
                 
                 <div className="flex items-center gap-3 p-4 rounded-lg bg-black/20 dark:bg-white/5 border border-border/50">
-                  <code className="text-sm font-mono flex-1 truncate">{CONTRACT_ADDRESS}</code>
+                  <code className="text-sm font-mono flex-1 truncate">{contractAddress}</code>
                   <Button
                     size="sm"
                     variant="ghost"
@@ -143,9 +176,16 @@ export function TrustSection() {
                     size="sm"
                     variant="ghost"
                     className="shrink-0"
+                    asChild
                     data-testid="button-view-contract"
                   >
-                    <ExternalLink className="w-4 h-4" />
+                    <a 
+                      href={getAddressExplorerUrl(chainId, contractAddress)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <ExternalLink className="w-4 h-4" />
+                    </a>
                   </Button>
                 </div>
               </div>
