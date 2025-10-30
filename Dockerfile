@@ -4,6 +4,14 @@ FROM node:18-bullseye AS builder
 
 WORKDIR /app
 
+# Declare build arguments BEFORE they're needed
+ARG VITE_WALLETCONNECT_PROJECT_ID
+ARG VITE_PREDICTION_MARKET_CONTRACT_MAINNET
+
+# Set as environment variables so Vite can access them during build
+ENV VITE_WALLETCONNECT_PROJECT_ID=$VITE_WALLETCONNECT_PROJECT_ID
+ENV VITE_PREDICTION_MARKET_CONTRACT_MAINNET=$VITE_PREDICTION_MARKET_CONTRACT_MAINNET
+
 # Improve caching by copying package manifest first
 COPY package.json package-lock.json* ./
 

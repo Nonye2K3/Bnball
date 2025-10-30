@@ -4,7 +4,7 @@ import { walletConnect, injected, coinbaseWallet } from 'wagmi/connectors'
 
 // IMPORTANT: Get your own WalletConnect Project ID from https://cloud.walletconnect.com/
 // Replace this placeholder with your actual project ID
-const projectId = process.env.WALLETCONNECT_PROJECT_ID || 'YOUR_WALLETCONNECT_PROJECT_ID'
+const projectId = import.meta.env.VITE_WALLETCONNECT_PROJECT_ID || 'YOUR_WALLETCONNECT_PROJECT_ID'
 
 if (projectId === 'YOUR_WALLETCONNECT_PROJECT_ID') {
   console.warn(
