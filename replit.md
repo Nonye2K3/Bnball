@@ -53,6 +53,14 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes (October 30, 2025)
 
+### Social Media & Real-Time Data Updates
+1. **Social Media Links:** Updated X/Twitter handle from @bn_ball_ to @bnball_official across Footer and all social links. Telegram link confirmed correct at https://t.me/BNBALL_Portal.
+2. **Real-Time Statistics:** Replaced hardcoded statistics ($2.8M TVL, 45K+ transactions, 99.9% uptime) with live data from /api/stats endpoint:
+   - Total Value Locked (TVL) now displays real-time totalVolume from blockchain
+   - Active Users count from actual user registrations
+   - Live Markets count from active prediction markets
+3. **Contract Display:** TrustSection now shows actual mainnet contract address (0x0f0D0a8AD191899F91bF52806cE4530f36bba860) with BSCScan verification link.
+
 ### Mainnet Deployment Fixes
 1. **WalletConnect Configuration:** Updated WalletConnect Project ID to `a6cc5ee0-526d-4058-b098-5827b7adba62` to enable proper wallet connections on mainnet.
 2. **Contract Verification:** Confirmed mainnet contract deployment at `0x0f0D0a8AD191899F91bF52806cE4530f36bba860` with admin wallet `0xC196dc762FbC2AB044AAEAc05E27CD10c4982a01`.
@@ -65,6 +73,7 @@ Preferred communication style: Simple, everyday language.
 - Contract interactions ready for mainnet use
 - Registration flow configured ($2 USD in BNB via Chainlink oracle)
 - Bet placement with custom amounts functional
+- Real-time statistics displaying correctly from /api/stats endpoint
 
 ### Known Issues
 - API-Football returning empty match arrays (either no games scheduled, rate limits, or free tier restrictions)
