@@ -14,6 +14,34 @@ import { TwitterApi } from 'twitter-api-v2';
 import { oddsApiService } from "./services/oddsApi";
 import { apiFootballService } from "./services/apiFootball";
 
+// In-memory cache for API-Football sync endpoint
+interface MarketSyncCache {
+  data: any[];
+  timestamp: number;
+  success: boolean;
+  error?: string;
+  created: number;
+  updated: number;
+  total: number;
+}
+
+let marketSyncCache: MarketSyncCache | null = null;
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes in milliseconds
+
+// Helper function to check if cache is valid
+function isCacheValid(): boolean {
+  if (!marketSyncCache) return false;
+  const now = Date.now();
+  const age = now - marketSyncCache.timestamp;
+  return age < CACHE_TTL;
+}
+
+// Helper function to get cache age in seconds
+function getCacheAge(): number {
+  if (!marketSyncCache) return 0;
+  return Math.floor((Date.now() - marketSyncCache.timestamp) / 1000);
+}
+
 // Logging utility
 function logRequest(method: string, path: string, data?: any) {
   console.log(`[${new Date().toISOString()}] ${method} ${path}`, data ? JSON.stringify(data) : '');
@@ -510,27 +538,113 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // POST /api/markets/sync-football - Sync live football data from API-Football
+  // POST /api/markets/sync-football - Sync live football data from API-Football with caching
   app.post("/api/markets/sync-football", async (req: Request, res: Response) => {
     try {
       logRequest('POST', '/api/markets/sync-football');
       
-      const footballMarkets = await apiFootballService.getAllFootballMarkets();
-      const createdMarkets = [];
-      const updatedMarkets = [];
-      
-      // No live matches available
-      if (footballMarkets.length === 0) {
-        console.log('No live football matches available from API-Football');
+      // Check if cache is valid
+      if (isCacheValid()) {
+        const cacheAge = getCacheAge();
+        const timeUntilNextSync = Math.max(0, Math.floor((CACHE_TTL - (Date.now() - marketSyncCache!.timestamp)) / 1000));
+        
+        console.log(`[CACHE HIT] Returning cached data (age: ${cacheAge}s, next sync in: ${timeUntilNextSync}s)`);
+        
         return res.json({
-          message: 'No live football matches available',
-          created: 0,
-          updated: 0,
-          total: 0,
-          source: 'api-football'
+          message: marketSyncCache!.success 
+            ? `Returning cached data from ${cacheAge} seconds ago` 
+            : `Previous sync failed: ${marketSyncCache!.error}`,
+          created: marketSyncCache!.created,
+          updated: marketSyncCache!.updated,
+          total: marketSyncCache!.total,
+          source: 'api-football',
+          cached: true,
+          cacheAge,
+          nextSyncIn: timeUntilNextSync,
+          success: marketSyncCache!.success,
+          error: marketSyncCache!.error
         });
       }
       
+      // Cache miss or expired - fetch fresh data
+      console.log('[CACHE MISS] Fetching fresh data from API-Football...');
+      
+      let footballMarkets: any[] = [];
+      let apiError: string | undefined;
+      let apiSuccess = true;
+      
+      try {
+        footballMarkets = await apiFootballService.getAllFootballMarkets();
+      } catch (error: any) {
+        apiSuccess = false;
+        
+        // Differentiate error types
+        if (error.message?.includes('429') || error.message?.toLowerCase().includes('rate limit')) {
+          apiError = 'API rate limit exceeded. Please try again later.';
+          console.error('[API RATE LIMIT] API-Football rate limit exceeded');
+        } else if (error.message?.includes('API_FOOTBALL_KEY')) {
+          apiError = 'API key not configured. Contact administrator.';
+          console.error('[API CONFIG ERROR]', error.message);
+        } else {
+          apiError = `API error: ${error.message || 'Unknown error'}`;
+          console.error('[API ERROR]', error);
+        }
+        
+        // Store error in cache
+        marketSyncCache = {
+          data: [],
+          timestamp: Date.now(),
+          success: false,
+          error: apiError,
+          created: 0,
+          updated: 0,
+          total: 0
+        };
+        
+        return res.status(503).json({
+          message: apiError,
+          created: 0,
+          updated: 0,
+          total: 0,
+          source: 'api-football',
+          cached: false,
+          cacheAge: 0,
+          nextSyncIn: Math.floor(CACHE_TTL / 1000),
+          success: false,
+          error: apiError
+        });
+      }
+      
+      const createdMarkets = [];
+      const updatedMarkets = [];
+      
+      // No live matches available (successful API call but empty results)
+      if (footballMarkets.length === 0) {
+        console.log('[NO MATCHES] No football matches scheduled in the next 3 days');
+        
+        marketSyncCache = {
+          data: [],
+          timestamp: Date.now(),
+          success: true,
+          created: 0,
+          updated: 0,
+          total: 0
+        };
+        
+        return res.json({
+          message: 'No football matches scheduled in the next 3 days',
+          created: 0,
+          updated: 0,
+          total: 0,
+          source: 'api-football',
+          cached: false,
+          cacheAge: 0,
+          nextSyncIn: Math.floor(CACHE_TTL / 1000),
+          success: true
+        });
+      }
+      
+      // Process matches and create/update markets
       for (const matchData of footballMarkets) {
         // Check if market already exists for this fixture
         const existingMarkets = await storage.getAllPredictionMarkets();
@@ -553,12 +667,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
+      // Update cache with successful result
+      marketSyncCache = {
+        data: [...createdMarkets, ...updatedMarkets],
+        timestamp: Date.now(),
+        success: true,
+        created: createdMarkets.length,
+        updated: updatedMarkets.length,
+        total: footballMarkets.length
+      };
+      
+      console.log(`[SYNC SUCCESS] Created ${createdMarkets.length}, Updated ${updatedMarkets.length}, Total ${footballMarkets.length} markets`);
+      
       return res.json({
         message: `Synced ${footballMarkets.length} football matches from API-Football`,
         created: createdMarkets.length,
         updated: updatedMarkets.length,
         total: footballMarkets.length,
-        source: 'api-football'
+        source: 'api-football',
+        cached: false,
+        cacheAge: 0,
+        nextSyncIn: Math.floor(CACHE_TTL / 1000),
+        success: true
       });
     } catch (error) {
       return handleError(res, error, 'sync football data');
