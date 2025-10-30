@@ -75,19 +75,19 @@ export function TrustSection() {
   const securityStats = [
     { 
       label: "Total Value Locked", 
-      value: stats ? formatTVL(stats.totalVolume) : "$0", 
+      value: stats?.totalVolume ? formatTVL(stats.totalVolume) : "$0", 
       icon: TrendingUp, 
       iconColor: "text-secondary" 
     },
     { 
       label: "Active Users", 
-      value: stats ? `${stats.activeUsers.toLocaleString()}+` : "0", 
+      value: stats?.activeUsers ? `${stats.activeUsers.toLocaleString()}+` : "0", 
       icon: Activity, 
       iconColor: "text-primary" 
     },
     { 
       label: "Live Markets", 
-      value: stats ? stats.liveMarketsCount.toString() : "0", 
+      value: stats?.liveMarketsCount ? stats.liveMarketsCount.toString() : "0", 
       icon: Check, 
       iconColor: "text-secondary" 
     }
