@@ -10,6 +10,7 @@ services:
       PORT: 5000
       # FRONTEND_URL is used by the server CORS checks. Set to your deployed domain.
       FRONTEND_URL: ${SERVICE_URL_APP}
+      VITE_WALLETCONNECT_PROJECT_ID: ${WALLETCONNECT_PROJECT_ID}
       # Below are additional environment variables the app reads. Provide them
       # in Coolify as secrets (do not commit actual values):
       # DEPLOYER_PRIVATE_KEY: "<private key>"             # only if you run hardhat scripts in the same environment
