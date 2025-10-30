@@ -24,11 +24,11 @@ import PredictionMarketABI from '../../../shared/contracts/PredictionMarket.json
 // Contract addresses from environment variables
 export const PREDICTION_MARKET_ADDRESSES = {
   // BSC Mainnet (Chain ID: 56)
-  mainnet: (process.env.VITE_PREDICTION_MARKET_CONTRACT_MAINNET || 
+  mainnet: (process.env.PREDICTION_MARKET_CONTRACT_MAINNET ||
     '0x0000000000000000000000000000000000000000') as `0x${string}`,
   
   // BSC Testnet (Chain ID: 97)
-  testnet: (process.env.VITE_PREDICTION_MARKET_CONTRACT_TESTNET || 
+  testnet: (process.env.PREDICTION_MARKET_CONTRACT_MAINNET ||
     '0x0000000000000000000000000000000000000000') as `0x${string}`,
 } as const
 
