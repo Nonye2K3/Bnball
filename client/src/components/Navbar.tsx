@@ -61,7 +61,7 @@ export function Navbar() {
           </div>
           
           <div className="flex items-center gap-3">
-            <div className="hidden lg:block">
+            <div className="hidden sm:block">
               <ThemeToggle />
             </div>
             {mounted && (
@@ -134,6 +134,9 @@ export function Navbar() {
             >
               Whitepaper
             </a>
+            <div className="sm:hidden py-2 flex justify-center">
+              <ThemeToggle />
+            </div>
             {mounted && (
               <>
                 {isConnected ? (
