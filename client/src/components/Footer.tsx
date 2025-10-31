@@ -73,7 +73,7 @@ export function Footer() {
             <h3 className="text-sm font-bold mb-4 text-foreground uppercase tracking-wider">Community</h3>
             <div className="space-y-3">
               <a
-                href="https://x.com/bn_ball_"
+                href="https://x.com/bnball_official"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors group"
@@ -148,7 +148,7 @@ export function Footer() {
               </motion.a>
               
               <motion.a
-                href="https://x.com/bn_ball_"
+                href="https://x.com/bnball_official"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="relative p-3 rounded-xl bg-gradient-to-br from-primary/20 to-primary/10 border border-primary/30 text-primary hover:text-primary transition-all duration-300 group"

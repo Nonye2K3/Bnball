@@ -84,7 +84,7 @@ export default function Markets() {
   // Sync sports data mutation
   const syncSportsMutation = useMutation({
     mutationFn: async () => {
-      const response = await apiRequest('POST', '/api/markets/sync-sports', {});
+      const response = await apiRequest('POST', '/api/markets/sync-football', {});
       return response.json();
     },
     onSuccess: () => {
@@ -204,7 +204,7 @@ export default function Markets() {
               <Alert className="bg-green-500/10 border-green-500/20">
                 <TrendingUp className="h-4 w-4 text-green-500" />
                 <AlertDescription className="text-sm text-green-600 dark:text-green-400">
-                  Successfully synced {syncSportsMutation.data.total} matches from TheOddsAPI 
+                  Successfully synced {syncSportsMutation.data.total} live football matches from API-Football 
                   ({syncSportsMutation.data.created} new markets created)
                 </AlertDescription>
               </Alert>

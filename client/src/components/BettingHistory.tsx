@@ -5,22 +5,26 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useWeb3 } from "@/hooks/useWeb3";
 import { useClaimWinnings } from "@/hooks/usePredictionMarket";
 import { ShareWinModal } from "@/components/ShareWinModal";
-import { TrendingUp, Trophy, XCircle, Clock, Coins, Share2 } from "lucide-react";
+import { TrendingUp, Trophy, XCircle, Clock, Coins, Share2, ExternalLink } from "lucide-react";
 import { motion } from "framer-motion";
 import { useState } from "react";
 import { formatDistanceToNow } from "date-fns";
 import { formatEther } from "viem";
 import { useQuery } from "@tanstack/react-query";
+import { getExplorerUrl } from "@/lib/contractConfig";
 import type { Bet } from "@shared/schema";
 
 type BetStatus = "All" | "Active" | "Won" | "Lost" | "Unclaimed";
 
 interface BetInfo {
   id: string;
-  marketId: number;
+  marketId: string;
   marketTitle: string;
   prediction: boolean;
   amount: string;
+  transactionHash: string;
+  chainId: number;
+  claimTransactionHash?: string;
   odds: number;
   status: "Active" | "Won" | "Lost" | "Unclaimed";
   potentialWinnings?: string;
@@ -72,10 +76,13 @@ export function BettingHistory() {
         
         return {
           id: bet.id,
-          marketId: parseInt(bet.marketId),
+          marketId: bet.marketId,
           marketTitle: `Market #${bet.marketId}`,
           prediction: bet.prediction === 'yes',
           amount,
+          transactionHash: bet.transactionHash,
+          chainId: bet.chainId,
+          claimTransactionHash: bet.claimTransactionHash || undefined,
           odds: 0,
           status,
           potentialWinnings: undefined,
@@ -111,7 +118,7 @@ export function BettingHistory() {
     }
   };
 
-  const handleClaim = (marketId: number) => {
+  const handleClaim = (marketId: string) => {
     claimWinnings(marketId);
   };
 
@@ -254,6 +261,41 @@ export function BettingHistory() {
                     <p className="font-mono font-semibold text-green-500" data-testid="text-actual-winnings">
                       {bet.actualWinnings} BNB
                     </p>
+                  </div>
+                )}
+              </div>
+
+              <div className="mb-4 space-y-2">
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1">Bet Transaction</p>
+                  <a
+                    href={getExplorerUrl(bet.chainId, bet.transactionHash)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1 hover:underline w-fit"
+                    data-testid={`link-txn-${bet.transactionHash.slice(0, 8)}`}
+                  >
+                    <code className="text-xs font-mono text-muted-foreground">
+                      {bet.transactionHash.slice(0, 10)}...{bet.transactionHash.slice(-8)}
+                    </code>
+                    <ExternalLink className="w-3 h-3 text-muted-foreground" />
+                  </a>
+                </div>
+                {bet.claimTransactionHash && (
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-1">Claim Transaction</p>
+                    <a
+                      href={getExplorerUrl(bet.chainId, bet.claimTransactionHash)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-1 hover:underline w-fit"
+                      data-testid={`link-txn-${bet.claimTransactionHash.slice(0, 8)}`}
+                    >
+                      <code className="text-xs font-mono text-green-500">
+                        {bet.claimTransactionHash.slice(0, 10)}...{bet.claimTransactionHash.slice(-8)}
+                      </code>
+                      <ExternalLink className="w-3 h-3 text-green-500" />
+                    </a>
                   </div>
                 )}
               </div>

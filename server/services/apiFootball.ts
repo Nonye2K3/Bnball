@@ -138,12 +138,12 @@ const BASE_URL = "https://v3.football.api-sports.io";
 
 // Top football leagues to fetch data for
 const SUPPORTED_LEAGUES = {
-  39: { name: 'Premier League', country: 'England', season: 2024 },
-  140: { name: 'La Liga', country: 'Spain', season: 2024 },
-  78: { name: 'Bundesliga', country: 'Germany', season: 2024 },
-  135: { name: 'Serie A', country: 'Italy', season: 2024 },
-  61: { name: 'Ligue 1', country: 'France', season: 2024 },
-  2: { name: 'UEFA Champions League', country: 'World', season: 2024 },
+  39: { name: 'Premier League', country: 'England', season: 2025 },
+  140: { name: 'La Liga', country: 'Spain', season: 2025 },
+  78: { name: 'Bundesliga', country: 'Germany', season: 2025 },
+  135: { name: 'Serie A', country: 'Italy', season: 2025 },
+  61: { name: 'Ligue 1', country: 'France', season: 2025 },
+  2: { name: 'UEFA Champions League', country: 'World', season: 2025 },
 };
 
 export class ApiFootballService {
@@ -189,9 +189,9 @@ export class ApiFootballService {
   }
 
   /**
-   * Get upcoming fixtures for today and next 7 days
+   * Get upcoming fixtures for today and next 3 days (reduced from 7 to minimize API calls)
    */
-  async getUpcomingFixtures(days = 7): Promise<ApiFootballFixture[]> {
+  async getUpcomingFixtures(days = 3): Promise<ApiFootballFixture[]> {
     try {
       const allFixtures: ApiFootballFixture[] = [];
       const today = new Date();

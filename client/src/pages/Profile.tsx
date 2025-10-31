@@ -14,12 +14,19 @@ import { useToast } from "@/hooks/use-toast";
 import { Copy, TrendingUp, TrendingDown, Target, Award } from "lucide-react";
 import { motion } from "framer-motion";
 import { useMemo } from "react";
-import { formatEther } from "viem";
+import { formatEther, parseEther } from "viem";
+import { useQuery } from "@tanstack/react-query";
+import type { PredictionMarket, Bet } from "@shared/schema";
 
 export default function Profile() {
   const { address, formattedAddress, isConnected, chain } = useWeb3();
   const { bets } = useUserBets();
   const { toast } = useToast();
+
+  // Fetch all markets to calculate real winnings
+  const { data: markets } = useQuery<PredictionMarket[]>({
+    queryKey: ['/api/markets'],
+  });
 
   const handleCopyAddress = () => {
     if (address) {
@@ -31,7 +38,61 @@ export default function Profile() {
     }
   };
 
-  // Calculate user statistics
+  /**
+   * Calculate actual winnings based on pool distribution formula
+   * Formula: (userBetInPool / winningPool) * totalPool
+   * Where userBetInPool = betAmount * 0.88 (after 12% fees)
+   */
+  const calculateActualWinnings = (
+    bet: Bet,
+    market: PredictionMarket
+  ): bigint => {
+    try {
+      const betAmount = BigInt(bet.amount);
+      
+      // 88% of bet amount goes to pools (12% fees: 10% platform + 2% creator)
+      const userBetInPool = (betAmount * BigInt(88)) / BigInt(100);
+      
+      // Determine which pool the user bet on and which pool won
+      const betOnYes = bet.prediction === 'yes';
+      const yesWon = market.result === 'yes';
+      
+      // Check if user's prediction matches the winning outcome
+      if (betOnYes !== yesWon) {
+        // Bet lost
+        return BigInt(0);
+      }
+      
+      // Convert pool amounts from decimal strings to BigInt (wei)
+      // Pool amounts are stored in BNB format (like "0.5"), need to convert to wei
+      const yesPoolBNB = market.yesPoolOnChain || "0";
+      const noPoolBNB = market.noPoolOnChain || "0";
+      
+      // Use parseEther for accurate decimal to wei conversion
+      const yesPool = parseEther(yesPoolBNB);
+      const noPool = parseEther(noPoolBNB);
+      const totalPool = yesPool + noPool;
+      
+      // Determine winning pool
+      const winningPool = yesWon ? yesPool : noPool;
+      
+      // Handle zero pool edge case (avoid division by zero)
+      if (winningPool === BigInt(0) || totalPool === BigInt(0)) {
+        console.warn(`Zero pool detected for market ${market.id}`);
+        return BigInt(0);
+      }
+      
+      // Calculate winnings: (userBetInPool * totalPool) / winningPool
+      const winnings = (userBetInPool * totalPool) / winningPool;
+      
+      return winnings;
+    } catch (error) {
+      console.error(`Error calculating winnings for bet ${bet.id}:`, error);
+      return BigInt(0);
+    }
+  };
+
+  // Calculate user statistics with real blockchain data
   const stats = useMemo(() => {
     if (!bets || !Array.isArray(bets) || bets.length === 0) {
       return {
@@ -44,6 +105,14 @@ export default function Profile() {
       };
     }
 
+    // Create a map of markets by ID for efficient lookup
+    const marketsMap = new Map<string, PredictionMarket>();
+    if (markets && Array.isArray(markets)) {
+      markets.forEach((market) => {
+        marketsMap.set(market.id, market);
+      });
+    }
+
     const totalBets = bets.length;
     let wonBets = 0;
     let lostBets = 0;
@@ -51,17 +120,39 @@ export default function Profile() {
     let totalWagered = BigInt(0);
     let totalWon = BigInt(0);
 
-    bets.forEach((bet: any) => {
-      totalWagered += bet.amount;
+    bets.forEach((bet) => {
+      const betAmount = BigInt(bet.amount);
+      totalWagered += betAmount;
       
-      if (bet.won === true) {
-        wonBets++;
-        // Mock winnings calculation - replace with actual data
-        totalWon += bet.amount * BigInt(2);
-      } else if (bet.won === false) {
-        lostBets++;
-      } else {
+      // Find the corresponding market
+      const market = marketsMap.get(bet.marketId);
+      
+      if (!market) {
+        // Market not found - count as active
         activeBets++;
+        return;
+      }
+      
+      // Check if market is resolved
+      if (market.status !== 'completed' || !market.result) {
+        // Market not yet resolved - count as active
+        activeBets++;
+        return;
+      }
+      
+      // Check if the bet won
+      const betOnYes = bet.prediction === 'yes';
+      const yesWon = market.result === 'yes';
+      const userWon = betOnYes === yesWon;
+      
+      if (userWon) {
+        wonBets++;
+        
+        // Calculate actual winnings based on pool distribution
+        const winnings = calculateActualWinnings(bet, market);
+        totalWon += winnings;
+      } else {
+        lostBets++;
       }
     });
 
@@ -77,7 +168,7 @@ export default function Profile() {
       lostBets,
       activeBets,
     };
-  }, [bets]);
+  }, [bets, markets]);
 
   // Show connect wallet prompt if not connected
   if (!isConnected) {
