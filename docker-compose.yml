@@ -35,7 +35,5 @@ services:
     restart: unless-stopped
 #    ports:
 #      - "3000:5000"
-#    ports:
-#      - "3000:5000"
 # For Coolify you can provide environment variables in the app settings
 # If your app uses a DB, add another service or use an external DB
