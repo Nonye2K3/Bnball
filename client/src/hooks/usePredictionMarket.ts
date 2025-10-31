@@ -850,68 +850,48 @@ export function useRegistrationFee() {
  * Hook to register a user (pay $2 USD equivalent in BNB)
  */
 export function useRegisterUser() {
-  const { address } = useAccount()
-  const chainId = useChainId()
-  const { toast } = useToast()
-  
-  const { feeInWei } = useRegistrationFee()
-  
-  const { 
-    data: hash, 
-    writeContract, 
-    isPending,
-    error,
-    reset
-  } = useWriteContract()
-  
-  const { 
-    isLoading: isConfirming, 
-    isSuccess 
-  } = useWaitForTransactionReceipt({ hash })
-
-  const registerUser = async () => {
-    if (!address) {
-      toast({
-        title: "Wallet Not Connected",
-        description: "Please connect your wallet first.",
-        variant: "destructive",
-      })
-      return
-    }
-
-    if (!feeInWei) {
-      toast({
-        title: "Registration Fee Not Available",
-        description: "Unable to fetch registration fee. Please try again.",
-        variant: "destructive",
-      })
-      return
-    }
-
-    try {
-      writeContract({
-        address: getContractAddress(chainId),
-        abi: PREDICTION_MARKET_ABI,
-        functionName: 'registerUser',
-        value: feeInWei,
-        gas: GAS_LIMITS.REGISTER_USER,
-      })
-    } catch (err: any) {
-      const errorMessage = parseBlockchainError(err)
-      toast({
-        title: "Registration Failed",
-        description: errorMessage,
-        variant: "destructive",
-      })
-    }
-  }
-
-  return {
-    registerUser,
-    isLoading: isPending || isConfirming,
-    isSuccess,
-    txHash: hash,
-    error,
-    reset,
-  }
+	const { address } = useAccount()
+	const chainId = useChainId()
+	const { toast } = useToast()
+	const { feeInWei } = useRegistrationFee()
+	
+	const { data: hash, writeContract, isPending, error, reset } = useWriteContract()
+	const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash })
+	
+	const registerUser = async () => {
+		if (!address) {
+			toast({ title: "Wallet Not Connected", description: "Please connect your wallet first.", variant: "destructive" })
+			return
+		}
+		
+		if (!feeInWei) {
+			toast({ title: "Registration Fee Not Available", description: "Unable to fetch registration fee. Please try again.", variant: "destructive" })
+			return
+		}
+		
+		// Add 1% buffer to avoid reverts from price change
+		const bufferedFee = (feeInWei * BigInt('101')) / BigInt(100)
+		
+		try {
+			writeContract({
+				address: getContractAddress(chainId),
+				abi: PREDICTION_MARKET_ABI,
+				functionName: 'registerUser',
+				value: bufferedFee,
+				gas: GAS_LIMITS.REGISTER_USER,
+			})
+		} catch (err: any) {
+			const errorMessage = parseBlockchainError(err)
+			toast({ title: "Registration Failed", description: errorMessage, variant: "destructive" })
+		}
+	}
+	
+	return {
+		registerUser,
+		isLoading: isPending || isConfirming,
+		isSuccess,
+		txHash: hash,
+		error,
+		reset,
+	}
 }
