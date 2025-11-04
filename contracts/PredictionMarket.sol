@@ -119,14 +119,22 @@ contract PredictionMarket {
         
         uint256 requiredBNB = getRegistrationFeeInBNB();
         require(msg.value >= requiredBNB, "Insufficient registration fee");
-        
+
+        // Mark user as registered before external interactions
         registeredUsers[msg.sender] = true;
-        
-        // Send registration fee to platform
-        (bool success, ) = payable(platformFeeRecipient).call{value: msg.value}("");
+
+        // Transfer exact fee to platform wallet
+        (bool success, ) = payable(platformFeeRecipient).call{value: requiredBNB}("");
         require(success, "Failed to send registration fee");
+
+        // Refund any excess value sent as buffer back to the user
+        uint256 excess = msg.value - requiredBNB;
+        if (excess > 0) {
+            (bool refundSuccess, ) = payable(msg.sender).call{value: excess}("");
+            require(refundSuccess, "Failed to refund excess payment");
+        }
         
-        emit UserRegistered(msg.sender, msg.value);
+        emit UserRegistered(msg.sender, requiredBNB);
     }
 
     /**
@@ -157,11 +165,18 @@ contract PredictionMarket {
         string memory description,
         string memory category,
         uint256 deadline
-    ) external payable requiresRegistration returns (uint256 marketId) {
-        require(msg.value == createMarketStake, "Must send exact stake amount");
+    ) external payable returns (uint256 marketId) {
+        uint256 stakeAmount = createMarketStake;
+        uint256 registrationFee = registeredUsers[msg.sender] ? 0 : getRegistrationFeeInBNB();
+        uint256 totalRequired = stakeAmount + registrationFee;
+        require(msg.value >= totalRequired, "Insufficient stake and fee");
         require(deadline > block.timestamp, "Deadline must be in the future");
         require(bytes(title).length >= 10, "Title too short");
         require(bytes(description).length >= 50, "Description too short");
+
+        if (registrationFee > 0) {
+            registeredUsers[msg.sender] = true;
+        }
 
         marketCount++;
         marketId = marketCount;
@@ -179,9 +194,21 @@ contract PredictionMarket {
             resolved: false,
             outcome: false,
             creator: msg.sender,
-            creatorStake: msg.value,
+            creatorStake: stakeAmount,
             creatorFeeAccrued: 0
         });
+
+        if (registrationFee > 0) {
+            (bool feeSuccess, ) = payable(platformFeeRecipient).call{value: registrationFee}("");
+            require(feeSuccess, "Failed to send registration fee");
+            emit UserRegistered(msg.sender, registrationFee);
+        }
+
+        uint256 excess = msg.value - totalRequired;
+        if (excess > 0) {
+            (bool refundSuccess, ) = payable(msg.sender).call{value: excess}("");
+            require(refundSuccess, "Failed to refund excess payment");
+        }
 
         emit MarketCreated(marketId, msg.sender, title, deadline);
         return marketId;

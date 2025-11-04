@@ -1,12 +1,12 @@
-import { 
-  type User, 
+import {
+  type User,
   type InsertUser,
   type PredictionMarket,
   type InsertPredictionMarket,
   type Bet,
   type InsertBet,
   type Transaction,
-  type InsertTransaction
+  type InsertTransaction,
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 
@@ -18,33 +18,47 @@ export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
-  
+
   // Prediction Market methods
   getPredictionMarket(id: string): Promise<PredictionMarket | undefined>;
   getAllPredictionMarkets(): Promise<PredictionMarket[]>;
   getPredictionMarketsByCategory(category: string): Promise<PredictionMarket[]>;
-  getPredictionMarketsByCreator(creatorAddress: string): Promise<PredictionMarket[]>;
-  createPredictionMarket(market: InsertPredictionMarket): Promise<PredictionMarket>;
-  updatePredictionMarket(id: string, market: Partial<PredictionMarket>): Promise<PredictionMarket | undefined>;
-  
+  getPredictionMarketsByCreator(
+    creatorAddress: string,
+  ): Promise<PredictionMarket[]>;
+  createPredictionMarket(
+    market: InsertPredictionMarket,
+  ): Promise<PredictionMarket>;
+  updatePredictionMarket(
+    id: string,
+    market: Partial<PredictionMarket>,
+  ): Promise<PredictionMarket | undefined>;
+
   // Bet methods
   getBet(id: string): Promise<Bet | undefined>;
   getBetsByMarket(marketId: string): Promise<Bet[]>;
   getBetsByUser(userAddress: string): Promise<Bet[]>;
   getBetByTransactionHash(transactionHash: string): Promise<Bet | undefined>;
-  getBetByTaxTransactionHash(taxTransactionHash: string): Promise<Bet | undefined>;
+  getBetByTaxTransactionHash(
+    taxTransactionHash: string,
+  ): Promise<Bet | undefined>;
   getRefundEligibleBets(): Promise<Bet[]>;
   createBet(bet: InsertBet): Promise<Bet>;
   updateBet(id: string, bet: Partial<Bet>): Promise<Bet | undefined>;
-  
+
   // Transaction methods
   getTransaction(id: string): Promise<Transaction | undefined>;
-  getTransactionByHash(transactionHash: string): Promise<Transaction | undefined>;
+  getTransactionByHash(
+    transactionHash: string,
+  ): Promise<Transaction | undefined>;
   getTransactionsByUser(userAddress: string): Promise<Transaction[]>;
   getTransactionsByType(type: string): Promise<Transaction[]>;
   createTransaction(transaction: InsertTransaction): Promise<Transaction>;
-  updateTransaction(id: string, transaction: Partial<Transaction>): Promise<Transaction | undefined>;
-  
+  updateTransaction(
+    id: string,
+    transaction: Partial<Transaction>,
+  ): Promise<Transaction | undefined>;
+
   // Platform Statistics
   getPlatformStats(): Promise<{
     totalVolume: string;
@@ -94,21 +108,27 @@ export class MemStorage implements IStorage {
     return Array.from(this.predictionMarkets.values());
   }
 
-  async getPredictionMarketsByCategory(category: string): Promise<PredictionMarket[]> {
+  async getPredictionMarketsByCategory(
+    category: string,
+  ): Promise<PredictionMarket[]> {
     return Array.from(this.predictionMarkets.values()).filter(
-      (market) => market.category === category
+      (market) => market.category === category,
     );
   }
 
-  async getPredictionMarketsByCreator(creatorAddress: string): Promise<PredictionMarket[]> {
+  async getPredictionMarketsByCreator(
+    creatorAddress: string,
+  ): Promise<PredictionMarket[]> {
     return Array.from(this.predictionMarkets.values()).filter(
-      (market) => market.creatorAddress === creatorAddress
+      (market) => market.creatorAddress === creatorAddress,
     );
   }
 
-  async createPredictionMarket(insertMarket: InsertPredictionMarket): Promise<PredictionMarket> {
+  async createPredictionMarket(
+    insertMarket: InsertPredictionMarket,
+  ): Promise<PredictionMarket> {
     const id = randomUUID();
-    const market: PredictionMarket = { 
+    const market: PredictionMarket = {
       id,
       title: insertMarket.title,
       description: insertMarket.description,
@@ -132,6 +152,7 @@ export class MemStorage implements IStorage {
       resolvedTransactionHash: insertMarket.resolvedTransactionHash ?? null,
       resolvedAt: insertMarket.resolvedAt ?? null,
       oddsApiEventId: insertMarket.oddsApiEventId ?? null,
+      apiFootballFixtureId: insertMarket.apiFootballFixtureId ?? null,
       homeTeam: insertMarket.homeTeam ?? null,
       awayTeam: insertMarket.awayTeam ?? null,
       sport: insertMarket.sport ?? null,
@@ -143,10 +164,13 @@ export class MemStorage implements IStorage {
     return market;
   }
 
-  async updatePredictionMarket(id: string, updates: Partial<PredictionMarket>): Promise<PredictionMarket | undefined> {
+  async updatePredictionMarket(
+    id: string,
+    updates: Partial<PredictionMarket>,
+  ): Promise<PredictionMarket | undefined> {
     const market = this.predictionMarkets.get(id);
     if (!market) return undefined;
-    
+
     const updatedMarket = { ...market, ...updates };
     this.predictionMarkets.set(id, updatedMarket);
     return updatedMarket;
@@ -159,37 +183,41 @@ export class MemStorage implements IStorage {
 
   async getBetsByMarket(marketId: string): Promise<Bet[]> {
     return Array.from(this.bets.values()).filter(
-      (bet) => bet.marketId === marketId
+      (bet) => bet.marketId === marketId,
     );
   }
 
   async getBetsByUser(userAddress: string): Promise<Bet[]> {
     return Array.from(this.bets.values()).filter(
-      (bet) => bet.userAddress === userAddress
+      (bet) => bet.userAddress === userAddress,
     );
   }
 
-  async getBetByTransactionHash(transactionHash: string): Promise<Bet | undefined> {
+  async getBetByTransactionHash(
+    transactionHash: string,
+  ): Promise<Bet | undefined> {
     return Array.from(this.bets.values()).find(
-      (bet) => bet.transactionHash === transactionHash
+      (bet) => bet.transactionHash === transactionHash,
     );
   }
 
-  async getBetByTaxTransactionHash(taxTransactionHash: string): Promise<Bet | undefined> {
+  async getBetByTaxTransactionHash(
+    taxTransactionHash: string,
+  ): Promise<Bet | undefined> {
     return Array.from(this.bets.values()).find(
-      (bet) => bet.taxTransactionHash === taxTransactionHash
+      (bet) => bet.taxTransactionHash === taxTransactionHash,
     );
   }
 
   async getRefundEligibleBets(): Promise<Bet[]> {
     return Array.from(this.bets.values()).filter(
-      (bet) => bet.refundEligible && !bet.refundProcessed
+      (bet) => bet.refundEligible && !bet.refundProcessed,
     );
   }
 
   async createBet(insertBet: InsertBet): Promise<Bet> {
     const id = randomUUID();
-    const bet: Bet = { 
+    const bet: Bet = {
       id,
       marketId: insertBet.marketId,
       userAddress: insertBet.userAddress,
@@ -212,7 +240,7 @@ export class MemStorage implements IStorage {
   async updateBet(id: string, updates: Partial<Bet>): Promise<Bet | undefined> {
     const bet = this.bets.get(id);
     if (!bet) return undefined;
-    
+
     const updatedBet = { ...bet, ...updates };
     this.bets.set(id, updatedBet);
     return updatedBet;
@@ -223,28 +251,32 @@ export class MemStorage implements IStorage {
     return this.transactions.get(id);
   }
 
-  async getTransactionByHash(transactionHash: string): Promise<Transaction | undefined> {
+  async getTransactionByHash(
+    transactionHash: string,
+  ): Promise<Transaction | undefined> {
     return Array.from(this.transactions.values()).find(
-      (tx) => tx.transactionHash === transactionHash
+      (tx) => tx.transactionHash === transactionHash,
     );
   }
 
   async getTransactionsByUser(userAddress: string): Promise<Transaction[]> {
     return Array.from(this.transactions.values()).filter(
-      (tx) => tx.userAddress === userAddress
+      (tx) => tx.userAddress === userAddress,
     );
   }
 
   async getTransactionsByType(type: string): Promise<Transaction[]> {
     return Array.from(this.transactions.values()).filter(
-      (tx) => tx.type === type
+      (tx) => tx.type === type,
     );
   }
 
-  async createTransaction(insertTransaction: InsertTransaction): Promise<Transaction> {
+  async createTransaction(
+    insertTransaction: InsertTransaction,
+  ): Promise<Transaction> {
     const id = randomUUID();
-    const transaction: Transaction = { 
-      ...insertTransaction, 
+    const transaction: Transaction = {
+      ...insertTransaction,
       id,
       timestamp: new Date(),
       gasUsed: insertTransaction.gasUsed ?? null,
@@ -254,15 +286,18 @@ export class MemStorage implements IStorage {
     return transaction;
   }
 
-  async updateTransaction(id: string, updates: Partial<Transaction>): Promise<Transaction | undefined> {
+  async updateTransaction(
+    id: string,
+    updates: Partial<Transaction>,
+  ): Promise<Transaction | undefined> {
     const transaction = this.transactions.get(id);
     if (!transaction) return undefined;
-    
+
     const updatedTransaction = { ...transaction, ...updates };
     this.transactions.set(id, updatedTransaction);
     return updatedTransaction;
   }
-  
+
   // Platform Statistics
   async getPlatformStats(): Promise<{
     totalVolume: string;
@@ -272,24 +307,24 @@ export class MemStorage implements IStorage {
   }> {
     const allBets = Array.from(this.bets.values());
     const allMarkets = Array.from(this.predictionMarkets.values());
-    
+
     const totalVolume = allBets.reduce((sum, bet) => {
       return sum + BigInt(bet.amount);
     }, BigInt(0));
-    
-    const liveMarketsCount = allMarkets.filter(m => 
-      m.status === 'live' || m.status === 'upcoming'
+
+    const liveMarketsCount = allMarkets.filter(
+      (m) => m.status === "live" || m.status === "upcoming",
     ).length;
-    
-    const uniqueUsers = new Set(allBets.map(bet => bet.userAddress));
+
+    const uniqueUsers = new Set(allBets.map((bet) => bet.userAddress));
     const activeUsersCount = uniqueUsers.size;
-    
+
     const totalPrizePool = allMarkets
-      .filter(m => m.status === 'live' || m.status === 'upcoming')
+      .filter((m) => m.status === "live" || m.status === "upcoming")
       .reduce((sum, market) => {
-        return sum + BigInt(market.totalPool || '0');
+        return sum + BigInt(market.totalPool || "0");
       }, BigInt(0));
-    
+
     return {
       totalVolume: totalVolume.toString(),
       liveMarketsCount,

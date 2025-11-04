@@ -40,4 +40,7 @@ module.exports = {
     cache: "./cache",
     artifacts: "./artifacts",
   },
+  mocha: {
+    require: ["ts-node/register"],
+  },
 };

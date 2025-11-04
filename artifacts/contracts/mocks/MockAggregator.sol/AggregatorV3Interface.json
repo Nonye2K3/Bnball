@@ -1,7 +1,7 @@
 {
   "_format": "hh-sol-artifact-1",
   "contractName": "AggregatorV3Interface",
-  "sourceName": "contracts/PredictionMarket.sol",
+  "sourceName": "contracts/mocks/MockAggregator.sol",
   "abi": [
     {
       "inputs": [],

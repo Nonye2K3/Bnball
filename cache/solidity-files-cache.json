@@ -1,0 +1,81 @@
+{
+  "_format": "hh-sol-cache-2",
+  "files": {
+    "/workspace/contracts/PredictionMarket.sol": {
+      "lastModificationDate": 1762217179177,
+      "contentHash": "c4631edec6ac6d1c8b6ec29e8ba4d587",
+      "sourceName": "contracts/PredictionMarket.sol",
+      "solcConfig": {
+        "version": "0.8.20",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "viaIR": true,
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.20"
+      ],
+      "artifacts": [
+        "AggregatorV3Interface",
+        "PredictionMarket"
+      ]
+    },
+    "/workspace/contracts/mocks/MockAggregator.sol": {
+      "lastModificationDate": 1762217212909,
+      "contentHash": "48e600a08ffee8dcddc211bf75c092b0",
+      "sourceName": "contracts/mocks/MockAggregator.sol",
+      "solcConfig": {
+        "version": "0.8.20",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "viaIR": true,
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.20"
+      ],
+      "artifacts": [
+        "AggregatorV3Interface",
+        "MockAggregator"
+      ]
+    }
+  }
+}
