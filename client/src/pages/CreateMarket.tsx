@@ -26,7 +26,12 @@ import {
 } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import { TrendingUp, AlertCircle, ExternalLink, Loader2 } from "lucide-react";
-import { useCreateMarket, useIsRegistered, useRegistrationFee, useRegisterUser } from "@/hooks/usePredictionMarket";
+import {
+  useCreateMarket,
+  useIsRegistered,
+  useRegistrationFee,
+  useRegisterUser,
+} from "@/hooks/usePredictionMarket";
 import { useWeb3 } from "@/hooks/useWeb3";
 import { getExplorerUrl } from "@/lib/contractConfig";
 import { useChainId } from "wagmi";
@@ -37,10 +42,13 @@ const createMarketSchema = z.object({
   title: z.string().min(10, "Title must be at least 10 characters"),
   description: z.string().min(50, "Description must be at least 50 characters"),
   category: z.string().min(1, "Please select a category"),
-  deadline: z.string().min(1, "Please set a deadline").refine((val) => {
-    const date = new Date(val);
-    return date > new Date();
-  }, "Deadline must be in the future"),
+  deadline: z
+    .string()
+    .min(1, "Please set a deadline")
+    .refine((val) => {
+      const date = new Date(val);
+      return date > new Date();
+    }, "Deadline must be in the future"),
   resolutionMethod: z.string().min(1, "Please select a resolution method"),
 });
 
@@ -51,11 +59,11 @@ export default function CreateMarket() {
   const chainId = useChainId();
   const { isConnected, connect } = useWeb3();
   const { createMarket, isLoading, isSuccess, txHash } = useCreateMarket();
-  
+
   const { isRegistered, isLoading: checkingRegistration } = useIsRegistered();
-  const { feeInBNB } = useRegistrationFee();
+  const { feeInWei, feeInBNB } = useRegistrationFee();
   const { registerUser, isLoading: registering } = useRegisterUser();
-  
+
   const form = useForm<CreateMarketForm>({
     resolver: zodResolver(createMarketSchema),
     defaultValues: {
@@ -101,13 +109,36 @@ export default function CreateMarket() {
     }
 
     const deadline = new Date(data.deadline);
-    await createMarket(data.title, data.description, data.category, deadline);
+
+    let registrationFeeForTx: bigint | undefined = undefined;
+
+    if (!isRegistered) {
+      if (!feeInWei) {
+        toast({
+          title: "Registration Fee Not Available",
+          description:
+            "Unable to fetch the $2 market creation fee. Please try again shortly.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      registrationFeeForTx = feeInWei;
+      toast({
+        title: "Registration Fee Added",
+        description: `A one-time $2 fee (~${feeInBNB || "..."} BNB) will be included in this transaction.`,
+      });
+    }
+
+    await createMarket(data.title, data.description, data.category, deadline, {
+      registrationFeeWei: registrationFeeForTx,
+    });
   };
 
   return (
     <div className="min-h-screen">
       <Navbar />
-      
+
       <div className="py-24">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
@@ -118,7 +149,8 @@ export default function CreateMarket() {
               Create Prediction Market
             </h1>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Launch your own prediction market and earn fees from trading activity
+              Launch your own prediction market and earn fees from trading
+              activity
             </p>
           </div>
 
@@ -128,11 +160,13 @@ export default function CreateMarket() {
               <Alert className="bg-amber-500/10 border-amber-500/20 mb-6">
                 <AlertDescription className="space-y-3">
                   <p className="text-sm">
-                    You must register to create markets. One-time fee: $2 USD ({feeInBNB || '...'} BNB)
+                    You haven't registered yet. A one-time $2 USD (
+                    {feeInBNB || "..."} BNB) fee will be added to your next
+                    market creation, or you can pay it now.
                   </p>
-                  <Button 
-                    onClick={registerUser} 
-                    disabled={registering}
+                  <Button
+                    onClick={registerUser}
+                    disabled={registering || !feeInWei}
                     className="w-full"
                     data-testid="button-register-now"
                   >
@@ -142,7 +176,7 @@ export default function CreateMarket() {
                         Registering...
                       </>
                     ) : (
-                      "Register Now"
+                      "Pay $2 Fee Now"
                     )}
                   </Button>
                 </AlertDescription>
@@ -150,7 +184,10 @@ export default function CreateMarket() {
             )}
 
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              <form
+                onSubmit={form.handleSubmit(onSubmit)}
+                className="space-y-6"
+              >
                 <FormField
                   control={form.control}
                   name="title"
@@ -201,7 +238,10 @@ export default function CreateMarket() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Category</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <Select
+                          onValueChange={field.onChange}
+                          defaultValue={field.value}
+                        >
                           <FormControl>
                             <SelectTrigger data-testid="select-category">
                               <SelectValue placeholder="Select category" />
@@ -246,17 +286,26 @@ export default function CreateMarket() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Resolution Method</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                      >
                         <FormControl>
                           <SelectTrigger data-testid="select-resolution">
                             <SelectValue placeholder="How will the outcome be determined?" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="chainlink">Chainlink Sports Oracle</SelectItem>
+                          <SelectItem value="chainlink">
+                            Chainlink Sports Oracle
+                          </SelectItem>
                           <SelectItem value="ai">AI Verification</SelectItem>
-                          <SelectItem value="hybrid">Chainlink + AI (Recommended)</SelectItem>
-                          <SelectItem value="community">Community Vote</SelectItem>
+                          <SelectItem value="hybrid">
+                            Chainlink + AI (Recommended)
+                          </SelectItem>
+                          <SelectItem value="community">
+                            Community Vote
+                          </SelectItem>
                         </SelectContent>
                       </Select>
                       <FormDescription>
@@ -267,16 +316,21 @@ export default function CreateMarket() {
                   )}
                 />
 
-
                 <div className="flex items-start gap-3 p-4 bg-blue-500/10 border border-blue-500/20 rounded-lg">
                   <AlertCircle className="w-5 h-5 text-blue-500 mt-0.5 flex-shrink-0" />
                   <div className="text-sm text-muted-foreground">
-                    <p className="font-semibold text-foreground mb-1">Market Creator Requirements & Benefits:</p>
+                    <p className="font-semibold text-foreground mb-1">
+                      Market Creator Requirements & Benefits:
+                    </p>
                     <ul className="space-y-1 text-xs">
-                      <li>• Requires 0.1 BNB stake (refunded when market resolves)</li>
+                      <li>
+                        • Requires 0.1 BNB stake (refunded when market resolves)
+                      </li>
                       <li>• Earn 2% fee on all trading volume</li>
                       <li>• Build reputation as a trusted market creator</li>
-                      <li>• Minimum betting amount for participants: 0.01 BNB</li>
+                      <li>
+                        • Minimum betting amount for participants: 0.01 BNB
+                      </li>
                     </ul>
                   </div>
                 </div>
@@ -286,13 +340,23 @@ export default function CreateMarket() {
                     type="submit"
                     className="flex-1"
                     size="lg"
-                    disabled={isLoading || !isConnected || checkingRegistration || !isRegistered}
+                    disabled={
+                      isLoading ||
+                      !isConnected ||
+                      checkingRegistration ||
+                      (!isRegistered && !feeInWei)
+                    }
                     data-testid="button-create-market"
                   >
-                    {isLoading ? "Creating Market..." : 
-                     checkingRegistration ? "Checking Registration..." :
-                     !isRegistered ? "Registration Required" :
-                     isConnected ? "Create Market" : "Connect Wallet"}
+                    {isLoading
+                      ? "Creating Market..."
+                      : checkingRegistration
+                        ? "Checking Registration..."
+                        : !isConnected
+                          ? "Connect Wallet"
+                          : !isRegistered
+                            ? `Create Market & Pay $2 Fee`
+                            : "Create Market"}
                   </Button>
                   <Button
                     type="button"
@@ -318,15 +382,22 @@ export default function CreateMarket() {
               </li>
               <li className="flex gap-2">
                 <span className="text-primary">✓</span>
-                <span>Set a reasonable deadline that gives traders time to participate</span>
+                <span>
+                  Set a reasonable deadline that gives traders time to
+                  participate
+                </span>
               </li>
               <li className="flex gap-2">
                 <span className="text-primary">✓</span>
-                <span>Choose the appropriate oracle method for your event type</span>
+                <span>
+                  Choose the appropriate oracle method for your event type
+                </span>
               </li>
               <li className="flex gap-2">
                 <span className="text-primary">✓</span>
-                <span>Review our market creation guidelines to avoid disputes</span>
+                <span>
+                  Review our market creation guidelines to avoid disputes
+                </span>
               </li>
             </ul>
           </Card>
