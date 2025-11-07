@@ -2,6 +2,29 @@
 
 This guide will help you deploy the PredictionMarket smart contract to Binance Smart Chain (BSC) Mainnet or Testnet.
 
+## 🎉 Deployed Contracts
+
+### BSC Testnet
+- **Contract Address**: `0x6772872862AED3e7156ec3bAABD5CFB7aEd2b0c8`
+- **Deployer**: `0xC6963c9f7D23212d22b08610773C555aCaD144D2`
+- **Transaction**: `0x6fe1a5acb09dacb9d7293342de649a83719762368ddb086c949018d16075d72c`
+- **Verified**: ✅ [View on BSCScan](https://testnet.bscscan.com/address/0x6772872862AED3e7156ec3bAABD5CFB7aEd2b0c8#code)
+- **Deployed**: November 7, 2025
+
+#### Contract Configuration
+- Minimum Bet Amount: 0.01 BNB
+- Create Market Stake: 0.1 BNB
+- Platform Fee: 10% (PLATFORM_FEE_BP = 1000)
+- Creator Fee: 2% (CREATOR_FEE_BP = 200)
+- Registration Fee: $2 USD (converted to BNB via Chainlink oracle)
+- BNB/USD Price Feed: `0x2514895c72f50D8bd4B4F9b1110F0D6bD2c97526`
+
+### BSC Mainnet
+- **Contract Address**: `0x0f0D0a8AD191899F91bF52806cE4530f36bba860`
+- **Status**: Production deployment
+
+---
+
 ## Prerequisites
 
 Before deploying, ensure you have:
